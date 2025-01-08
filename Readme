@@ -1,0 +1,7 @@
+START SERVER: npm run dev
+
+NAMING CONVENTION:
+  FUNCTIONS/VARIABLES: createUser
+  TABLES: User_orders
+  ROUTES: userRoute
+  FILE_NAME: orderRoutes
