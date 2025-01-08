@@ -1,0 +1,6 @@
+{
+    "watch": ["src"],
+    "ext": "js,json",
+    "exec": "node --experimental-modules src/index.js"
+  }
+  
