@@ -2,6 +2,7 @@ START SERVER: npm run dev
 
 NAMING CONVENTION:
   FUNCTIONS/VARIABLES: createUser
-  TABLES: User_orders
+  TABLE_NAME: Order, User_orders
+  TABLE_KEY_NAME: user_id
   ROUTES: userRoute
   FILE_NAME: orderRoutes
