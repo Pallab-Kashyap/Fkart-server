@@ -1,29 +1,7 @@
-# Project Setup
+START SERVER: npm run dev
 
-## Start the Development Server
-
-To start the development server, use the following command:
-
-```bash
-npm run dev
-
-
-## Naming Conventions
-
-To ensure consistency across the project, follow these naming conventions:
-
-### Functions and Variables
-- **Format:** camelCase
-- **Example:** `createUser`
-
-### Database Tables
-- **Format:** snake_case with plural nouns when applicable
-- **Example:** `User_orders`
-
-### API Routes
-- **Format:** camelCase
-- **Example:** `userRoute`
-
-### File Names
-- **Format:** camelCase
-- **Example:** `orderRoutes`
+NAMING CONVENTION:
+  FUNCTIONS/VARIABLES: createUser
+  TABLES: User_orders
+  ROUTES: userRoute
+  FILE_NAME: orderRoutes
