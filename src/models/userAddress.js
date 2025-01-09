@@ -44,6 +44,10 @@ const Address = sequelize.define('Address', {
     type: DataTypes.STRING(100),
     allowNull: true,
   },
+  isDefault: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
 }, {
   tableName: 'addresses',
   timestamps: true,

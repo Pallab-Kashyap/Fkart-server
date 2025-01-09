@@ -4,11 +4,11 @@ import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import authRoute from './routes/authRoute.js';
 import rateLimit from 'express-rate-limit';
-// import sycnDB from './models/index.js';
+import sycnDB from './models/index.js';
 
 dotenv.config();
 connectDB();
-// sycnDB();
+sycnDB();
 
 const app = express()
 
@@ -39,7 +39,8 @@ app.use('/api/v1/auth', authRoute);
 
 app.use(errorHandler);
 
-const port = process.env.PORT || 3000;
+const port = process.env.POR || 3003;
+
 
 app.listen(port, () => {
   console.log(`Server running on port ${port}`);
