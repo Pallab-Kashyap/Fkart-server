@@ -4,11 +4,11 @@ import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import authRoute from './routes/authRoute.js';
 import rateLimit from 'express-rate-limit';
-import sycnDB from './models/index.js';
+// import sycnDB from './models/index.js';
 
 dotenv.config();
 connectDB();
-sycnDB();
+// sycnDB();
 
 const app = express()
 
