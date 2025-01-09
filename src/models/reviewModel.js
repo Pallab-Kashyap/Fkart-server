@@ -1,7 +1,5 @@
 import { DataTypes } from "sequelize";
-import {sequelize} from '../config/DBConfig.js';
-import User from "./userModel.js";
- 
+import {sequelize} from '../config/DBConfig.js'; 
 
 const Review = sequelize.define(
   "Review",

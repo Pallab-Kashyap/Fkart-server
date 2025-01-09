@@ -1,6 +1,5 @@
 import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/DBConfig.js';
-import User from './userModel.js';
 
 const OTPVerification = sequelize.define(
   'OTPVerification',

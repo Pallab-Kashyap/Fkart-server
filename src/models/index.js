@@ -18,7 +18,7 @@ const sycnDB = async () => {
 
   // ADDRESS
   User.hasMany(Address, { foreignKey: 'user_id' });
-  Address.belongsTo(User, { foreignKey: 'user_id', onDelete: "CASCADE" });
+  Address.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
   //  PRODUCT
 
@@ -51,9 +51,20 @@ const sycnDB = async () => {
     console.log('sync completed');
   } catch (error) {
     console.log('ERROR', error);
-    throw error
+    throw error;
   }
 };
 
-export default sycnDB
+export default sycnDB;
 
+export {
+  User,
+  Address,
+  Product,
+  Order,
+  OrderItem,
+  Payment,
+  Shipment,
+  Review,
+  OTPVerification,
+};

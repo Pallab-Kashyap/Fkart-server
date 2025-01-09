@@ -14,7 +14,7 @@ const User = sequelize.define(
       allowNull: false,
       validate: {
         notNull: {
-          msg: "all fields required",
+          msg: "userName is required",
         },
       },
     },
@@ -27,7 +27,7 @@ const User = sequelize.define(
       },
       validate: {
         notNull: {
-          msg: "all fields required",
+          msg: "email is required",
         },
         isEmail: {
           msg: "Please provide a valid email address",
@@ -43,7 +43,7 @@ const User = sequelize.define(
       },
       validate: {
         notNull: {
-          msg: "all fields required",
+          msg: "phone number is required",
         },
       },
     },
@@ -52,7 +52,7 @@ const User = sequelize.define(
       allowNull: false,
       validate: {
         notNull: {
-          msg: "all fields required",
+          msg: "password is required",
         },
       },
     },
@@ -60,6 +60,9 @@ const User = sequelize.define(
       type: DataTypes.STRING(50),
     },
     oauth_id: {
+      type: DataTypes.STRING(255),
+    },
+    refresh_token: {
       type: DataTypes.STRING(255),
     },
   },

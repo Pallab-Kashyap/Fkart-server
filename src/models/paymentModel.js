@@ -1,7 +1,5 @@
 import { DataTypes, UUIDV4 } from "sequelize";
 import {sequelize} from '../config/DBConfig.js';
-import User from "./userModel.js";
-import Order from "./orderModel.js";
 
 const Payment = sequelize.define(
   "Payment",
