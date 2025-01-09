@@ -28,18 +28,87 @@ app.get('/api/v1', (req, res) => {
 });
 
 app.use('/api/v1/auth', authRoute);
-// user
-// products
-// cart
-// address
-// Order
-// Payment
-// Shipment
-// review
+
+// TODO:
+
+// AUTH
+  // basic auth
+    // login
+    // register
+    // forgot password
+  // oauth
+    // google
+      // register
+      // login
+  // twillio OTP
+    // send OTP
+    // verify OTP
+
+// USER PROFILE
+    // get
+    // update
+
+// PRODUCT
+    // fetch from square
+    // update in square
+    // store in local db
+    // fetch from local db
+    // update in local db
+    // store in redis
+    // fetch from redis
+    // get for client
+
+// CART
+    // add
+    // fetch  
+    // update
+    // remove
+
+// ADDRESS
+    // add
+    // fetch
+    // update
+    // remove
+    // set default
+
+// ORDER
+    // create
+    // fetch
+    // update
+    // remove
+
+// PAYMENT
+    // initiate
+    // verify
+    // store
+
+// SHIPPING
+  // Shiprocket
+    // create order in shiprocket
+    // fetch order from shiprocket
+    // update order in shiprocket
+    // cancel order in shiprocket
+    // webhook
+      // order delivered
+      // order returned
+  // local server
+    // create shipment in local db
+    // update
+    // fetch
+    // cancel for user
+    // webhook listner
+      // order delivered
+      // order returned 
+
+// REVIEW & FAVOURITE
+    // add
+    // fetch
+    // update
+    // remove
 
 app.use(errorHandler);
 
-const port = process.env.POR || 3003;
+const port = process.env.POR || 3000;
 
 
 app.listen(port, () => {
