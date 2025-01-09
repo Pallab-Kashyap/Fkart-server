@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import ApiError from './APIError.js';
 
 dotenv.config();
 
@@ -31,7 +32,7 @@ const verifyToken = (token, secret) => {
     try {
         return jwt.verify(token, secret);
     } catch (error) {
-        return null
+        throw ApiError.custom(401, 'Ivalid token or token expired');
     }
 }
 
