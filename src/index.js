@@ -52,6 +52,8 @@ app.use('/api/v1/auth', authRoute);
 // USER PROFILE
     // get
     // update
+    // table meta data
+      // update order, review, address
 
 // PRODUCT
     // fetch from square
@@ -68,8 +70,9 @@ app.use('/api/v1/auth', authRoute);
     // fetch  
     // update
     // remove
+    // total
 
-// ADDRESS
+// ADDRESS auth(req.userId)
     // add
     // fetch
     // update

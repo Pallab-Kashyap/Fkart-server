@@ -26,6 +26,10 @@ class ApiError extends Error {
     static internal(message) {
       return new ApiError(500, message);
     }
+
+    static custom(statusCode, message){
+      return new ApiError(statusCode, message);
+    }
   }
   
   export default ApiError;
