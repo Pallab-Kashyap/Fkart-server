@@ -5,6 +5,9 @@ import errorHandler from './middlewares/errorHandler.js';
 import authRoute from './routes/authRoute.js';
 import rateLimit from 'express-rate-limit';
 // import sycnDB from './models/index.js';
+import addressRoute from './routes/addressRoutes.js'; 
+// const addressRoutes = require('./routes/addressRoutes');
+
 
 dotenv.config();
 connectDB();
@@ -29,6 +32,8 @@ app.get('/api/v1', (req, res) => {
 
 app.use('/api/v1/auth', authRoute);
 
+      app.use('/api/v1/addresses', addressRoute);
+      // app.use('/api/addresses', addressRoutes);
 // TODO:
 
 // AUTH
