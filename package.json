@@ -6,15 +6,15 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "prepare": "husky || true",
-    "lint": "eslint ."
+    // "prepare": "husky || true",
+    // "lint": "eslint ."
   },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier --write",
-      "git add"
-    ]
+  // "lint-staged": {
+  //   "*.js": [
+  //     "eslint --fix",
+  //     "prettier --write",
+  //     "git add"
+  //   ]
   },
   "author": "",
   "license": "ISC",

@@ -15,7 +15,7 @@ const Address = sequelize.define('Address', {
       key: 'id',
     },
     onDelete: 'CASCADE',
-  },
+  },    
   address: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -38,7 +38,13 @@ const Address = sequelize.define('Address', {
   },
   pincode: {
     type: DataTypes.STRING(20),
-    allowNull: true,
+    allowNull: false ,
+    validate: {
+        notNull: {
+            msg: "pincode flied required"
+        },
+        is: /^[0-9]{6}$/
+    }
   },
   country: {
     type: DataTypes.STRING(100),
@@ -54,3 +60,4 @@ const Address = sequelize.define('Address', {
 });
 
 export default Address;
+ 
