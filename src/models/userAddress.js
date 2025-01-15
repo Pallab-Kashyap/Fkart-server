@@ -2,6 +2,7 @@ import { DataTypes } from 'sequelize';
 import {sequelize} from '../config/DBConfig.js';
 
 const Address = sequelize.define('Address', {
+  
   id: {
     type: DataTypes.UUID,
     defaultValue: DataTypes.UUIDV4,
@@ -15,7 +16,26 @@ const Address = sequelize.define('Address', {
       key: 'id',
     },
     onDelete: 'CASCADE',
-  },    
+  },  
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: {
+        msg: "Name field required"
+      }
+    }
+  },
+  phone: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    validate: {
+      notNull: { 
+        msg: "Phone field required"
+      },
+      is: /^[0-9]{10}$/ // Example for 10-digit Indian phone number
+    }
+  },
   address: {
     type: DataTypes.STRING,
     allowNull: false,
@@ -30,11 +50,11 @@ const Address = sequelize.define('Address', {
   },
   city: {
     type: DataTypes.STRING(100),
-    allowNull: true,
+    allowNull: false,
   },
   state: {
     type: DataTypes.STRING(100),
-    allowNull: true,
+    allowNull: false,
   },
   pincode: {
     type: DataTypes.STRING(20),

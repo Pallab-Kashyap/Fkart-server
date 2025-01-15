@@ -5,16 +5,7 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    // "prepare": "husky || true",
-    // "lint": "eslint ."
-  },
-  // "lint-staged": {
-  //   "*.js": [
-  //     "eslint --fix",
-  //     "prettier --write",
-  //     "git add"
-  //   ]
+    "dev": "nodemon src/index.js"
   },
   "author": "",
   "license": "ISC",

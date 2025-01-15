@@ -11,7 +11,7 @@ import addressRoute from './routes/addressRoutes.js';
 
 dotenv.config();
 connectDB();
-// sycnDB();
+// sycnDB(); 
 
 const app = express()
 
@@ -30,32 +30,31 @@ app.get('/api/v1', (req, res) => {
   res.send('Server is up and running');
 });
 
-app.use('/api/v1/auth', authRoute);
 
-      app.use('/api/v1/addresses', addressRoute);
-      // app.use('/api/addresses', addressRoutes);
+// app.use('/api/addresses', addressRoutes);
 // TODO:
 
 // AUTH
-  // basic auth
-    // login
-    // register
-    // forgot password
-  // oauth
-    // google
+app.use('/api/v1/auth', authRoute);
+// basic auth
+// login
+// register
+// forgot password
+// oauth
+// google
       // register
       // login
-  // twillio OTP
+      // twillio OTP
     // send OTP
     // verify OTP
-
-// USER PROFILE
+    
+    // USER PROFILE
     // get
     // update
     // table meta data
-      // update order, review, address
-
-// PRODUCT
+    // update order, review, address
+    
+    // PRODUCT
     // fetch from square
     // update in square
     // store in local db
@@ -64,20 +63,17 @@ app.use('/api/v1/auth', authRoute);
     // store in redis
     // fetch from redis
     // get for client
-
-// CART
+    
+    // CART
     // add
     // fetch  
     // update
     // remove
     // total
+    
+    // ADDRESS auth(req.userId)
+    app.use('/api/v1/addresses', addressRoute);
 
-// ADDRESS auth(req.userId)
-    // add
-    // fetch
-    // update
-    // remove
-    // set default
 
 // ORDER
     // create
@@ -116,7 +112,7 @@ app.use('/api/v1/auth', authRoute);
 
 app.use(errorHandler);
 
-const port = process.env.POR || 3000;
+const port = process.env.POR || 8080;
 
 
 app.listen(port, () => {

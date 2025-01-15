@@ -32,7 +32,7 @@ const createUser = asyncWrapper(async (req, res) => {
     phone_number: phoneNumber,
     password: hashedPassword,
   });
-
+  console.log('hifehf');
   const accessToken = generateAccessToken(newUser.id);
   const refreshToken = generateRefreshToken(newUser.id);
 
