@@ -5,10 +5,9 @@
   "type": "module",
   "scripts": {
     "start": "node src/index.js",
-    
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "lint": "eslint ."
   },
-  
   "author": "",
   "license": "ISC",
   "description": "",
@@ -21,7 +20,8 @@
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.13.1",
     "pg-hstore": "^2.3.4",
-    "sequelize": "^6.37.5"
+    "sequelize": "^6.37.5",
+    "square": "^39.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
