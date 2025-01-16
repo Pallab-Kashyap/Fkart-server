@@ -8,13 +8,19 @@ import Review from './reviewModel.js';
 import Shipment from './shipmentModel.js';
 import Address from './userAddress.js';
 import User from './userModel.js';
-
+import AddToCart  from './AddToCartModel.js';
 const sycnDB = async () => {
   // OTP
   OTPVerification.belongsTo(User, {
     foreignKey: 'user_id',
     onDelete: 'CASCADE',
   });
+// CART
+User.hasMany(AddToCart, { foreignKey: 'user_id' });
+AddToCart.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+
+Product.hasMany(AddToCart, { foreignKey: 'product_id' });
+AddToCart.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
 
   // ADDRESS
   User.hasMany(Address, { foreignKey: 'user_id' });
@@ -58,6 +64,7 @@ const sycnDB = async () => {
 export default sycnDB;
 
 export {
+  AddToCart,
   User,
   Address,
   Product,
