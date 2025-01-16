@@ -2,7 +2,7 @@
 
 To start the development server, use the following command:
 
-```bash
+```
 npm install
 npm run dev
 ```

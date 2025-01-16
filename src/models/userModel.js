@@ -1,5 +1,5 @@
-import { DataTypes } from "sequelize";
-import {sequelize} from '../config/DBConfig.js';
+import { DataTypes } from 'sequelize';
+import { sequelize } from '../config/DBConfig.js';
 
 const User = sequelize.define(
   "User",
@@ -14,7 +14,7 @@ const User = sequelize.define(
       allowNull: false,
       validate: {
         notNull: {
-          msg: "userName is required",
+          msg: 'userName is required',
         },
       },
     },
@@ -23,14 +23,14 @@ const User = sequelize.define(
       allowNull: false,
       unique: {
         arg: true,
-        msg: 'email already exists'
+        msg: 'email already exists',
       },
       validate: {
         notNull: {
-          msg: "email is required",
+          msg: 'email is required',
         },
         isEmail: {
-          msg: "Please provide a valid email address",
+          msg: 'Please provide a valid email address',
         },
       },
     },
@@ -39,11 +39,15 @@ const User = sequelize.define(
       allowNull: false,
       unique: {
         arg: true,
+<<<<<<< Updated upstream
         msg: 'phone number already exists'
+=======
+        msg: 'email already exists',
+>>>>>>> Stashed changes
       },
       validate: {
         notNull: {
-          msg: "phone number is required",
+          msg: 'phone number is required',
         },
       },
     },
@@ -52,7 +56,7 @@ const User = sequelize.define(
       allowNull: false,
       validate: {
         notNull: {
-          msg: "password is required",
+          msg: 'password is required',
         },
       },
     },
@@ -68,7 +72,7 @@ const User = sequelize.define(
   },
   {
     timestamps: true,
-    tableName: 'users'
+    tableName: 'users',
   }
 );
 

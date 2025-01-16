@@ -1,0 +1,443 @@
+{
+
+"SQUARE AUTH": {
+    "accessToken": "EAAAllknGMfOLfzwpIKtAG-5B9SijXTfKSA1cfkLZd7LHe_oMSqu4QHxsDwzAAT5",
+    "tokenType": "bearer",
+    "expiresAt": "2025-02-10T12:47:03Z",
+    "merchantId": "ML09J5W7NZGQD",
+    "refreshToken": "EQAAlhoFr5PGwJoMshNBAkE0aDsDdQkuLl5iDM3wS2pnAhnOWET7L5AtHxrU_KmW",
+    "shortLived": false
+  },
+
+"SQUARE_ITEMS":{
+    "objects": [
+        {
+            "type": "ITEM",
+            "id": "MC3KDUSONTHDQBI6JL4JP5K6",
+            "updated_at": "2025-01-07T18:08:44.334Z",
+            "created_at": "2025-01-07T15:44:32.083Z",
+            "version": 1736273324334,
+            "is_deleted": false,
+            "present_at_all_locations": true,
+            "item_data": {
+                "name": "Shoes",
+                "is_taxable": true,
+                "variations": [
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "K3A5J2Q4XCVW4K7YVN55TQDO",
+                        "updated_at": "2025-01-07T15:48:13.345Z",
+                        "created_at": "2025-01-07T15:44:32.083Z",
+                        "version": 1736264893345,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "MC3KDUSONTHDQBI6JL4JP5K6",
+                            "name": "7, Black",
+                            "ordinal": 0,
+                            "pricing_type": "FIXED_PRICING",
+                            "price_money": {
+                                "amount": 70000,
+                                "currency": "INR"
+                            },
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+                                    "item_option_value_id": "653CG425SB7DCUDGP2KOAEYY"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "KQHQSHVFXSDRDSDYTNIHEQOT"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    },
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "JREOBS25EHDFJ2G3RYOGRXDK",
+                        "updated_at": "2025-01-07T15:48:14.127Z",
+                        "created_at": "2025-01-07T15:48:13.418Z",
+                        "version": 1736264894127,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "MC3KDUSONTHDQBI6JL4JP5K6",
+                            "name": "7, White",
+                            "ordinal": 1,
+                            "pricing_type": "VARIABLE_PRICING",
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+                                    "item_option_value_id": "653CG425SB7DCUDGP2KOAEYY"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "W5S5HPN2BDRSJYUZGPEDAZNO"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    },
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "LJUNB43UI2YLFLBL5QLLUUUO",
+                        "updated_at": "2025-01-07T15:48:13.345Z",
+                        "created_at": "2025-01-07T15:44:32.083Z",
+                        "version": 1736264893345,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "MC3KDUSONTHDQBI6JL4JP5K6",
+                            "name": "8, Black",
+                            "ordinal": 2,
+                            "pricing_type": "FIXED_PRICING",
+                            "price_money": {
+                                "amount": 70000,
+                                "currency": "INR"
+                            },
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+                                    "item_option_value_id": "S3NQMQDMBELXFBOZKR5PPM4N"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "KQHQSHVFXSDRDSDYTNIHEQOT"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    },
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "ZPW4ZVDGHGLOKCMXQEIS7DBE",
+                        "updated_at": "2025-01-07T15:48:14.127Z",
+                        "created_at": "2025-01-07T15:48:13.418Z",
+                        "version": 1736264894127,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "MC3KDUSONTHDQBI6JL4JP5K6",
+                            "name": "8, White",
+                            "ordinal": 3,
+                            "pricing_type": "VARIABLE_PRICING",
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+                                    "item_option_value_id": "S3NQMQDMBELXFBOZKR5PPM4N"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "W5S5HPN2BDRSJYUZGPEDAZNO"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    }
+                ],
+                "product_type": "REGULAR",
+                "skip_modifier_screen": false,
+                "item_options": [
+                    {
+                        "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY"
+                    },
+                    {
+                        "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS"
+                    }
+                ],
+                "image_ids": [
+                    "B3EMJ4UHLVLWDCV4NTJEJSGI"
+                ],
+                "pickup_fulfillment_preferences_id": "fprefs_1287vuljioorn06n3ur1bx8uk",
+                "delivery_fulfillment_preferences_id": "fprefs_1287vuljh7pcqvfgl2u1xlz4c",
+                "shipping_fulfillment_preferences_id": "fprefs_1287vuljj736pgzef5zoodcss",
+                "dine_in_fulfillment_preferences_id": "fprefs_1287vulji3murhopsxdn7fr4c",
+                "is_archived": false
+            }
+        },
+        {
+            "type": "ITEM",
+            "id": "LA5QIMJKQ3A2VKU2BM4H3EAE",
+            "updated_at": "2025-01-07T16:01:48.888Z",
+            "created_at": "2025-01-07T16:01:46.414Z",
+            "version": 1736265708888,
+            "is_deleted": false,
+            "present_at_all_locations": true,
+            "item_data": {
+                "name": "T Shirt",
+                "description": "Experience the epitome of comfort and style with our premium T-shirts. Crafted from the finest fabrics, these T-shirts offer unparalleled comfort throughout the day. Choose from a wide array of colors and designs to suit your personal style effortlessly. Elevate your wardrobe with our collection of stylish T-shirts today.",
+                "is_taxable": true,
+                "variations": [
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "VG7WUJIDBEAUSSO3NIYBJ64N",
+                        "updated_at": "2025-01-07T16:01:47.044Z",
+                        "created_at": "2025-01-07T16:01:46.414Z",
+                        "version": 1736265707044,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "LA5QIMJKQ3A2VKU2BM4H3EAE",
+                            "name": "S, Black",
+                            "ordinal": 0,
+                            "pricing_type": "FIXED_PRICING",
+                            "price_money": {
+                                "amount": 99900,
+                                "currency": "INR"
+                            },
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY",
+                                    "item_option_value_id": "4UPOM53XVEGRVZAHMU4ILKCE"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "KQHQSHVFXSDRDSDYTNIHEQOT"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    },
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "VD36B4ZWOVXTNTMHB6ECUE6S",
+                        "updated_at": "2025-01-07T16:01:47.044Z",
+                        "created_at": "2025-01-07T16:01:46.414Z",
+                        "version": 1736265707044,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "LA5QIMJKQ3A2VKU2BM4H3EAE",
+                            "name": "S, White",
+                            "ordinal": 1,
+                            "pricing_type": "FIXED_PRICING",
+                            "price_money": {
+                                "amount": 99900,
+                                "currency": "INR"
+                            },
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY",
+                                    "item_option_value_id": "4UPOM53XVEGRVZAHMU4ILKCE"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "W5S5HPN2BDRSJYUZGPEDAZNO"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    },           
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "HI3OJKMGEBMFDK7H2PEWJO7R",
+                        "updated_at": "2025-01-07T16:01:47.044Z",
+                        "created_at": "2025-01-07T16:01:46.414Z",
+                        "version": 1736265707044,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "LA5QIMJKQ3A2VKU2BM4H3EAE",
+                            "name": "L, Black",
+                            "ordinal": 3,
+                            "pricing_type": "FIXED_PRICING",
+                            "price_money": {
+                                "amount": 99900,
+                                "currency": "INR"
+                            },
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY",
+                                    "item_option_value_id": "GODZYQG7RG7MWTEAEFMXEWNS"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "KQHQSHVFXSDRDSDYTNIHEQOT"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    },
+                    {
+                        "type": "ITEM_VARIATION",
+                        "id": "JJPLW7PBP7GZLJQSNMUQFOZ2",
+                        "updated_at": "2025-01-07T16:01:47.044Z",
+                        "created_at": "2025-01-07T16:01:46.414Z",
+                        "version": 1736265707044,
+                        "is_deleted": false,
+                        "present_at_all_locations": true,
+                        "item_variation_data": {
+                            "item_id": "LA5QIMJKQ3A2VKU2BM4H3EAE",
+                            "name": "L, White",
+                            "ordinal": 4,
+                            "pricing_type": "FIXED_PRICING",
+                            "price_money": {
+                                "amount": 99900,
+                                "currency": "INR"
+                            },
+                            "track_inventory": false,
+                            "item_option_values": [
+                                {
+                                    "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY",
+                                    "item_option_value_id": "GODZYQG7RG7MWTEAEFMXEWNS"
+                                },
+                                {
+                                    "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                                    "item_option_value_id": "W5S5HPN2BDRSJYUZGPEDAZNO"
+                                }
+                            ],
+                            "sellable": true,
+                            "stockable": true
+                        }
+                    }
+                ],
+                "product_type": "REGULAR",
+                "skip_modifier_screen": false,
+                "item_options": [
+                    {
+                        "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY"
+                    },
+                    {
+                        "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS"
+                    }
+                ],
+                "image_ids": [
+                    "2CSNBDUXEOOFVCDJRBGMPLUL"
+                ],
+                "pickup_fulfillment_preferences_id": "fprefs_1287vv419o2j4h15zkswxd3a9",
+                "delivery_fulfillment_preferences_id": "fprefs_1287vv4181f4g8dsd2nhq30f5",
+                "description_html": "Experience the epitome of comfort and style with our premium T-shirts. Crafted from the finest fabrics, these T-shirts offer unparalleled comfort throughout the day. Choose from a wide array of colors and designs to suit your personal style effortlessly. Elevate your wardrobe with our collection of stylish T-shirts today.",
+                "description_plaintext": "Experience the epitome of comfort and style with our premium T-shirts. Crafted from the finest fabrics, these T-shirts offer unparalleled comfort throughout the day. Choose from a wide array of colors and designs to suit your personal style effortlessly. Elevate your wardrobe with our collection of stylish T-shirts today.",
+                "shipping_fulfillment_preferences_id": "fprefs_1287vv41a3f5ozysb3egp2fa9",
+                "dine_in_fulfillment_preferences_id": "fprefs_1287vv4196pe2jabq5x21bdnl",
+                "is_archived": false
+            }
+        },
+        {
+            "type": "ITEM_OPTION",
+            "id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+            "updated_at": "2025-01-09T08:44:58.248Z",
+            "created_at": "2025-01-07T15:44:31.492Z",
+            "version": 1736412298248,
+            "is_deleted": false,
+            "present_at_all_locations": true,
+            "item_option_data": {
+                "name": "Footwear Size Chart",
+                "display_name": "Size Chart",
+                "show_colors": false,
+                "values": [
+                    {
+                        "type": "ITEM_OPTION_VAL",
+                        "id": "653CG425SB7DCUDGP2KOAEYY",
+                        "version": 1736264671452,
+                        "item_option_value_data": {
+                            "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+                            "name": "7",
+                            "ordinal": 0
+                        }
+                    },
+                    {
+                        "type": "ITEM_OPTION_VAL",
+                        "id": "S3NQMQDMBELXFBOZKR5PPM4N",
+                        "version": 1736264671452,
+                        "item_option_value_data": {
+                            "item_option_id": "EXY3K4UEW5VYBUZQMQ55UGNY",
+                            "name": "8",
+                            "ordinal": 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "ITEM_OPTION",
+            "id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+            "updated_at": "2025-01-07T16:01:45.185Z",
+            "created_at": "2025-01-07T15:48:12.739Z",
+            "version": 1736265705185,
+            "is_deleted": false,
+            "present_at_all_locations": true,
+            "item_option_data": {
+                "name": "Color",
+                "display_name": "Color",
+                "show_colors": false,
+                "values": [
+                    {
+                        "type": "ITEM_OPTION_VAL",
+                        "id": "KQHQSHVFXSDRDSDYTNIHEQOT",
+                        "version": 1736264892699,
+                        "item_option_value_data": {
+                            "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                            "name": "Black",
+                            "ordinal": 0
+                        }
+                    },
+                    {
+                        "type": "ITEM_OPTION_VAL",
+                        "id": "W5S5HPN2BDRSJYUZGPEDAZNO",
+                        "version": 1736264892699,
+                        "item_option_value_data": {
+                            "item_option_id": "MDS3L5ZHQSOGKNLJV3NEGZAS",
+                            "name": "White",
+                            "ordinal": 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "ITEM_OPTION",
+            "id": "RWWQCUVNOWJCONMSFETKCDTY",
+            "updated_at": "2025-01-09T08:44:16.401Z",
+            "created_at": "2025-01-07T16:01:45.88Z",
+            "version": 1736412256401,
+            "is_deleted": false,
+            "present_at_all_locations": true,
+            "item_option_data": {
+                "name": "Cloth Size",
+                "display_name": "Size",
+                "show_colors": false,
+                "values": [
+                    {
+                        "type": "ITEM_OPTION_VAL",
+                        "id": "4UPOM53XVEGRVZAHMU4ILKCE",
+                        "version": 1736265705847,
+                        "item_option_value_data": {
+                            "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY",
+                            "name": "S",
+                            "ordinal": 0
+                        }
+                    },
+                    {
+                        "type": "ITEM_OPTION_VAL",
+                        "id": "GODZYQG7RG7MWTEAEFMXEWNS",
+                        "version": 1736265705847,
+                        "item_option_value_data": {
+                            "item_option_id": "RWWQCUVNOWJCONMSFETKCDTY",
+                            "name": "L",
+                            "ordinal": 1
+                        }
+                    }
+                ]
+            }
+        }
+        
+    ]
+}
+
+}

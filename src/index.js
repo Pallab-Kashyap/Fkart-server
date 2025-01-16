@@ -2,10 +2,14 @@ import express from 'express';
 import dotenv from 'dotenv';
 import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
-import authRoute from './routes/authRoute.js';
 import rateLimit from 'express-rate-limit';
+import cors from 'cors';
 // import sycnDB from './models/index.js';
+
+//Routes
+import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js'; 
+import squareRoute from './routes/squareRoutes.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
 
@@ -14,6 +18,11 @@ connectDB();
 // sycnDB(); 
 
 const app = express()
+
+app.use(cors({
+  origin: '*',
+  credentials: true,
+}));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
@@ -52,9 +61,9 @@ app.use('/api/v1/auth', authRoute);
     // get
     // update
     // table meta data
-    // update order, review, address
-    
-    // PRODUCT
+      // update order, review, address
+
+// PRODUCT
     // fetch from square
     // update in square
     // store in local db
@@ -109,6 +118,32 @@ app.use('/api/v1/auth', authRoute);
     // fetch
     // update
     // remove
+
+    app.get('/api/v1/list-items', async (req, res) => {
+              const accessToken = 'EAAAllknGMfOLfzwpIKtAG-5B9SijXTfKSA1cfkLZd7LHe_oMSqu4QHxsDwzAAT5'
+      
+              try {
+                  const response = await fetch('https://connect.squareup.com/v2/catalog/list', {
+                      method: 'GET',
+                      headers: {
+      
+                          'Authorization': `Bearer ${accessToken}`,
+                          'Content-Type': 'application/json'
+                      }
+                  });
+                  const data = await response.json();
+                  console.log(data);
+      
+                  if (response.ok) {
+                      res.json(data);
+                  } else {
+                      res.status(400).send(response);
+                  }
+              } catch (error) {
+                  res.status(500).send('Internal Server Error');
+              }
+          });
+
 
 app.use(errorHandler);
 
