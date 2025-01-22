@@ -4,18 +4,20 @@ import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-// import sycnDB from './models/index.js';
+// import sycnDB from './models/index.js';     
 
 //Routes
+import bodyParser from 'body-parser';
+import addToCartRoutes from './routes/addToCartRoutes.js';
 import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js'; 
 import squareRoute from './routes/squareRoutes.js';
-// const addressRoutes = require('./routes/addressRoutes');
-
+// const addressRoutes = require('./routes/addressRoutes'); 
+  
 
 dotenv.config();
-connectDB();
-// sycnDB(); 
+connectDB(); 
+// sycnDB();      
 
 const app = express()
 
@@ -72,7 +74,8 @@ app.use('/api/v1/auth', authRoute);
     // store in redis
     // fetch from redis
     // get for client
-    
+    app.use(bodyParser.json()); 
+app.use('/api/v1/cart',addToCartRoutes); // Route registration
     // CART
     // add
     // fetch  
@@ -147,7 +150,7 @@ app.use('/api/v1/auth', authRoute);
 
 app.use(errorHandler);
 
-const port = process.env.POR || 8080;
+const port = process.env.POR || 3000;
 
 
 app.listen(port, () => {

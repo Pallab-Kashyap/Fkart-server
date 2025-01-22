@@ -39,11 +39,7 @@ const User = sequelize.define(
       allowNull: false,
       unique: {
         arg: true,
-<<<<<<< Updated upstream
-        msg: 'phone number already exists'
-=======
         msg: 'email already exists',
->>>>>>> Stashed changes
       },
       validate: {
         notNull: {

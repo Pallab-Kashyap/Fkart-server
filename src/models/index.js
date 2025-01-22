@@ -8,20 +8,22 @@ import Review from './reviewModel.js';
 import Shipment from './shipmentModel.js';
 import Address from './userAddress.js';
 import User from './userModel.js';
-import AddToCart  from './AddToCartModel.js';
+import Cart from './cartModel.js';
+import CartItem from './cartItemModel.js';
 const sycnDB = async () => {
   // OTP
   OTPVerification.belongsTo(User, {
     foreignKey: 'user_id',
     onDelete: 'CASCADE',
   });
-// CART
-User.hasMany(AddToCart, { foreignKey: 'user_id' });
-AddToCart.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
-Product.hasMany(AddToCart, { foreignKey: 'product_id' });
-AddToCart.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+  Cart.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
+  Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
+  CartItem.belongsTo(Cart, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
+
+  Product.hasMany(CartItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+  CartItem.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
   // ADDRESS
   User.hasMany(Address, { foreignKey: 'user_id' });
   Address.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
@@ -64,7 +66,8 @@ AddToCart.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
 export default sycnDB;
 
 export {
-  AddToCart,
+  Cart,          
+  CartItem, 
   User,
   Address,
   Product,

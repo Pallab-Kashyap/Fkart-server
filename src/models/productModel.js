@@ -27,13 +27,14 @@ const Product = sequelize.define(
     },
     image_url: {
       type: DataTypes.STRING(255),
-    },
-    ratting: {
-      type: DataTypes.DECIMAL,
-    },
-    number_of_reviews: {
-      type: DataTypes.INTEGER,
-    },
+    } 
+    // ratting: {
+    //   type: DataTypes.DECIMAL,
+    //    allowNull: true
+    // },
+    // number_of_reviews: {
+    //   type: DataTypes.INTEGER,
+    // },
   },
   {
     tableName: "products",
