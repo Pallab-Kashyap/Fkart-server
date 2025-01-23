@@ -1,3 +1,4 @@
+
 import { DataTypes } from "sequelize";
 import { sequelize } from '../config/DBConfig.js';
 
@@ -28,13 +29,6 @@ const Product = sequelize.define(
     image_url: {
       type: DataTypes.STRING(255),
     } 
-    // ratting: {
-    //   type: DataTypes.DECIMAL,
-    //    allowNull: true
-    // },
-    // number_of_reviews: {
-    //   type: DataTypes.INTEGER,
-    // },
   },
   {
     tableName: "products",
@@ -43,3 +37,4 @@ const Product = sequelize.define(
 );
 
 export default Product;
+

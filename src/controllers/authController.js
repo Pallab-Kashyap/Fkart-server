@@ -69,11 +69,11 @@ const login = asyncWrapper(async (req, res) => {
     throw ApiError.badRequest('Invalid credentials');
   }
 
-  try {
-    await bcrypt.compare(password, user.password);
-  } catch (error) {
-    throw ApiError.internal('Error verifying password');
-  }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      throw ApiError.badRequest('Invalid credentials');
+    }
   console.log('ent');
 
   const accessToken = generateAccessToken(user.id);

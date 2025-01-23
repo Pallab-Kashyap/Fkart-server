@@ -2,7 +2,7 @@ import { DataTypes } from 'sequelize';
 import { sequelize } from '../config/DBConfig.js';
 
 const User = sequelize.define(
-  "User",
+  'User',
   {
     id: {
       type: DataTypes.UUID,
@@ -39,7 +39,8 @@ const User = sequelize.define(
       allowNull: false,
       unique: {
         arg: true,
-        msg: 'email already exists',
+        msg: 'phone number already exists'
+
       },
       validate: {
         notNull: {

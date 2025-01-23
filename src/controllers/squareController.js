@@ -94,7 +94,7 @@
 
 import { Client, Environment, ApiError as squareApiError } from 'square';
 import asyncWrapper from '../utils/asyncWrapper.js';
-import SquareData from '../models/squareDataModel.js';
+import SquareData from '../models/index.js';
 import ApiError from '../utils/APIError.js';
 import crypto from 'crypto';
 import ApiResponse from '../utils/APIResponse.js';
@@ -104,7 +104,7 @@ const squareClient = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN,
 });
 
-const ENCRYPTION_KEY = crypto.randomBytes(32);
+const ENCRYPTION_KEY = process.env.SQUARE_ENCRYPTION_KEY
 const IV = crypto.randomBytes(16);
 
 function encryptToken(accessToken, refreshToken) {
@@ -143,12 +143,13 @@ const authorizeSquare = asyncWrapper(async (req, res) => {
 const squareCallback = asyncWrapper(async (req, res) => {
   const { code } = req.query;
   const clientSecret = process.env.SQUARE_CLIENT_SECRET;
-
+  const clientId = process.env.SQUARE_APPLICATION_ID;
+  console.log(code, clientSecret, clientId);
   try {
     const { result } = await squareClient.oAuthApi.obtainToken({
-      clientId: process.env.SQUARE_APPLICATION_ID,
-      clientSecret: clientSecret,
-      code: code,
+      clientId,
+      clientSecret,
+      code,
       grantType: 'authorization_code',
     });
 
@@ -163,68 +164,55 @@ const squareCallback = asyncWrapper(async (req, res) => {
         expire_at: expiresAt,
         merchant_id: merchantId,
       });
+      if(!data)
+        throw ApiError.internal('problem in storing data in SquareData DB')
+      console.log(data);
       ApiResponse.created(res, 'OAuth flow completed', null);
     } catch (error) {
       return ApiError.internal('Error storing token');
     }
   } catch (error) {
-    res.status(500).send('Error during OAuth flow');
+    console.log(error);
+    res.status(500).send(`Error during OAuth flow: ${error}`);
   }
 });
 
-const getItems = asyncWrapper(async (req, res) => {
-  const accessToken = req.headers.authorization.split(' ')[1];
-  const response = await squareClient.catalogApi.listCatalog();
-  const catalogData = response.result;
+const fetchSquareClientTokensFromDB = asyncWrapper(async () => {
+  const data = await SquareData.findOne()
+  if(!data) throw ApiError.internal('No sqauare token found in database, first register the merchant')
+  const {token, iv} = data
+  const [accessToken, refreshToken] = decryptToken(token, iv)
+  return {
+    accessToken,
+    refreshToken
+  }
+})
 
-  // Serialize the catalog data
-  const serializedData = JSON.stringify(catalogData, replacer);
-  console.log('Serialized Data:', serializedData);
-  // Simulate storing in a database
-  // In a real application, you'd store `serializedData` in your database
-  
-  // Simulate retrieving from a database
-  const retrievedData = JSON.parse(serializedData, reviver);
-  ApiResponse.success(res, 'Items fetched successfully', serializedData);
-  console.log('Retrieved Data:', retrievedData);
-});
+const fetchSquareCatalogList = async (req, res) => {
+  const { accessToken } = await fetchSquareClientTokensFromDB();
 
-
-// Replacer function for JSON.stringify to handle BigInt serialization
-const replacer = (key, value) =>
-  typeof value === "bigint" ? { $bigint: value.toString() } : value;
-
-// Reviver function for JSON.parse to handle BigInt deserialization
-const reviver = (key, value) =>
-  value !== null &&
-  typeof value === "object" &&
-  "$bigint" in value &&
-  typeof value.$bigint === "string"
-    ? BigInt(value.$bigint)
-    : value;
-
-// Function to fetch catalog list
-async function fetchCatalogList() {
   try {
-    const response = await client.catalogApi.listCatalog();
-    const catalogData = response.result;
+    const squareBaseUrl = process.env.SQUARE_BASE_URL
+    const response = await fetch(`${squareBaseUrl}/v2/catalog/list`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+    });
 
-    // Serialize the catalog data
-    const serializedData = JSON.stringify(catalogData, replacer);
-    console.log('Serialized Data:', serializedData);
-    ApiResponse.success(res, 'Items fetched successfully', serializedData);
-    // Simulate storing in a database
-    // In a real application, you'd store `serializedData` in your database
+    if (!response.ok) {
+      // const errorBody = await res.text(); 
+      throw ApiError.internal(`Square API Error: ${response.status} - ${errorBody}`);
+    }
 
-    // Simulate retrieving from a database
-    const retrievedData = JSON.parse(serializedData, reviver);
-    console.log('Retrieved Data:', retrievedData);
-
-    // Use the retrieved data as needed
+    const responseData = await response.json();
+    ApiResponse.success(res, "Fetch from Square successful", responseData);
   } catch (error) {
-    console.error('Error fetching catalog list:', error);
+    throw ApiError.internal(`Error fetching data from Square: ${error.message}`);
   }
-}
+};
 
 
-export { authorizeSquare, squareCallback, getItems };
+
+export { authorizeSquare, squareCallback, fetchSquareCatalogList };
