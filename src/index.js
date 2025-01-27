@@ -40,7 +40,7 @@ app.use(limiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/api/v1', (req, res) => {
+app.get('/health', (req, res) => {
   res.send('Server is up and running');
 });
 
