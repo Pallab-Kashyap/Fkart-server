@@ -36,4 +36,8 @@ const verifyToken = (token, secret) => {
     }
 }
 
-export { generateAccessToken, generateRefreshToken, generateToken, verifyToken };
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000);
+};
+
+export { generateAccessToken, generateRefreshToken, generateToken, verifyToken, generateOTP };

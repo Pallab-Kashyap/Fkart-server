@@ -5,9 +5,9 @@ import errorHandler from './middlewares/errorHandler.js';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import sycnDB from './models/index.js';
+import Product from './models/productModel.js';
 
 //Routes
-import bodyParser from 'body-parser';
 import addToCartRoutes from './routes/addToCartRoutes.js';
 import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js';
@@ -80,7 +80,6 @@ app.use('/api/v1/products', productRoute);
 // update in local db
 // store in redis
 // fetch from redis
-
 
 // CART
 app.use('/api/v1/cart', addToCartRoutes); // Route registration

@@ -1,72 +1,73 @@
 import bcrypt from 'bcrypt';
-import { User } from '../models/index.js';
+import { OTPVerification, User } from '../models/index.js';
 import {
   generateAccessToken,
+  generateOTP,
   generateRefreshToken,
 } from '../utils/generateToken.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiError from '../utils/APIError.js';
 import ApiResponse from '../utils/APIResponse.js';
+import { Op } from 'sequelize';
+import sendOTP from '../utils/twillio.js';
 
 const createUser = asyncWrapper(async (req, res) => {
   const { userName, email, phoneNumber, password } = req.body;
 
-  if(!userName || !email || !phoneNumber || !password){
-   throw ApiError.badRequest('userName, email, phoneNumber and password are required')
+  if (!userName || !email || !phoneNumber || !password) {
+    throw ApiError.badRequest(
+      'userName, email, phoneNumber and password are required'
+    );
   }
 
   const existingUser = await User.findOne({
     where: {
-      email,
+      [Op.or]: [
+        { email: email },
+        { phone_number: phoneNumber }
+      ]
     },
     attributes: ['id'],
   });
   console.log(existingUser);
 
   if (existingUser) {
-    throw ApiError.badRequest('User already exists with this email');
+    throw ApiError.badRequest('User already exists with this email or phone number');
   }
 
   const salt = await bcrypt.genSalt(10);
   const hashedPassword = await bcrypt.hash(password, salt);
 
-  const newUser = await User.create({
+  const user = await User.create({
     userName,
     email,
     phone_number: phoneNumber,
     password: hashedPassword,
   });
-  console.log('hifehf');
-  const accessToken = generateAccessToken(newUser.id);
-  const refreshToken = generateRefreshToken(newUser.id);
 
-  console.log(accessToken, refreshToken);
+  const OTP = generateOTP();
+  const isOTPSent = await sendOTP(OTP, phoneNumber);
 
-  ApiResponse.created(res, 'User created successfully', {
-    accessToken,
-    refreshToken,
+  if (!isOTPSent) {
+    await user.destroy(); // Rollback user creation
+    throw ApiError.internal('Failed to send OTP');
+  }
+
+  await OTPVerification.create({
+    user_id: user.id,
+    otp_code: OTP,
+    expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
   });
 
-  const update = await User.update(
-    {
-      refresh_token: refreshToken,
-    },
-    {
-      where: {
-        id: newUser.id,
-      },
-    },
-  );
-
-  console.log(update);
+  ApiResponse.created(res, `OTP has been sent to your mobile number`, {OTP});
 });
 
 const login = asyncWrapper(async (req, res) => {
   const { phoneNumber, password } = req.body;
 
-  if(!phoneNumber || !password){
-    throw ApiError.badRequest('phoneNumber and password are required')
-   }
+  if (!phoneNumber || !password) {
+    throw ApiError.badRequest('phoneNumber and password are required');
+  }
 
   const user = await User.findOne({
     where: { phone_number: phoneNumber },
@@ -77,39 +78,123 @@ const login = asyncWrapper(async (req, res) => {
     throw ApiError.badRequest('Invalid credentials');
   }
 
+  const match = await bcrypt.compare(password, user.password);
+  if (!match) {
+    throw ApiError.badRequest('Invalid credentials');
+  }
+  const OTP = generateOTP();
+  const isOTPSnet = await sendOTP(OTP, phoneNumber);
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      throw ApiError.badRequest('Invalid credentials');
+  if (!isOTPSnet) {
+    throw ApiError.internal('Failed to send OTP');
+  }
+
+  await OTPVerification.create({
+    user_id: user.id,
+    otp_code: OTP,
+    expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
+  });
+
+  ApiResponse.created(res, `OTP has been sent to your mobile number`, {OTP});
+});
+
+const verifyOTP = asyncWrapper(async (req, res) => {
+  const { phoneNumber, OTP } = req.body;
+
+  if (!phoneNumber || !OTP) {
+    throw ApiError.badRequest('Phone number and OTP are required');
+  }
+
+  const user = await User.findOne({
+    where: { phone_number: phoneNumber },
+    attributes: ['id'],
+  });
+
+  if (!user) {
+    throw ApiError.badRequest('User not found');
+  }
+
+  const otpRecord = await OTPVerification.findOne({
+    where: {
+      user_id: user.id,
+      otp_code: OTP.toString(),
+      is_verified: false
     }
-  console.log('ent');
+  });
+
+  if (!otpRecord) {
+    throw ApiError.badRequest('Invalid OTP');
+  }
+
+  if (otpRecord.created_at) {
+    const otpAge = Date.now() - otpRecord.created_at.getTime();
+    if (otpAge > 10 * 60 * 1000) { 
+      throw ApiError.badRequest('OTP has expired');
+    }
+  }
+
+  await OTPVerification.update(
+    { is_verified: true },
+    {
+      where: {
+        user_id: user.id,
+        otp_code: OTP
+      }
+    }
+  );
 
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
 
-  ApiResponse.success(res, 'Login successful', {
+  await User.update(
+    { refresh_token: refreshToken },
+    { where: { id: user.id } }
+  );
+
+  ApiResponse.success(res, 'OTP verified successfully', {
     accessToken,
-    refreshToken,
+    refreshToken
+  });
+});
+
+const resendOTP = asyncWrapper(async (req, res) => {
+  const { phoneNumber } = req.body;
+
+  if (!phoneNumber) {
+    throw ApiError.badRequest('Phone number is required');
+  }
+
+  const user = await User.findOne({
+    where: { phone_number: phoneNumber },
+    attributes: ['id'],
   });
 
-  await User.update(
-    {
-      refresh_token: refreshToken,
-    },
-    {
-      where: {
-        id: user.id,
-      },
-    },
-  );
+  if (!user) {
+    throw ApiError.badRequest('User not found');
+  }   
+
+  const OTP = generateOTP();
+  const isOTPSent = await sendOTP(OTP, phoneNumber);
+
+  if (!isOTPSent) {
+    throw ApiError.internal('Failed to send OTP');
+  }
+
+  await OTPVerification.create({
+    user_id: user.id,
+    otp_code: OTP,
+    expiration_time: new Date(Date.now() + 10 * 60 * 1000),
+  }); 
+
+  ApiResponse.created(res, `OTP has been sent to your mobile number`, {OTP});
 });
 
 const changePassword = asyncWrapper(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.userId;
 
-  if(!currentPassword || !newPassword){
-    throw ApiError.badRequest('currentPassword and newPassword are required')
+  if (!currentPassword || !newPassword) {
+    throw ApiError.badRequest('currentPassword and newPassword are required');
   }
 
   const user = await User.findByPk(userId, {
@@ -137,10 +222,12 @@ const changePassword = asyncWrapper(async (req, res) => {
       where: {
         id: userId,
       },
-    },
+    }
   );
 
-  res.status(200).json({message: 'Password updated successfully'});
+  res.status(200).json({ message: 'Password updated successfully' });
 });
 
-export { createUser, login, changePassword };
+
+
+export { createUser, login, changePassword, verifyOTP, resendOTP };

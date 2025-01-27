@@ -19,19 +19,34 @@ const OTPVerification = sequelize.define(
     },
     otp_code: {
       type: DataTypes.STRING(6),
+      allowNull: false,
+      validate: {
+        len: [6, 6],
+        isNumeric: true
+      }
     },
     expiration_time: {
       type: DataTypes.DATE,
+      allowNull: false
     },
     is_verified: {
       type: DataTypes.BOOLEAN,
       defaultValue: false,
     },
+
   },
   {
     tableName: 'otp_verifications',
     timestamps: true,
   },
 );
+
+OTPVerification.cleanup = async () => {
+  await OTPVerification.destroy({
+    where: {
+      expiration_time: { [Op.lt]: new Date() }
+    }
+  });
+};
 
 export default OTPVerification;

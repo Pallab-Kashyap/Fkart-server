@@ -1,6 +1,5 @@
 import ApiError from "../utils/APIError.js";
 
-
 const errorHandler = (err, req, res, next) => {
   if (err instanceof ApiError) {
     return res.status(err.statusCode).json({
@@ -9,6 +8,19 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  if (err.name && err.name.startsWith('Sequelize')) {
+    // Handle Sequelize Unique Constraint Error
+    if (err.name === 'SequelizeUniqueConstraintError') {
+      return res.status(409).json({
+        message: 'Duplicate value detected. Please check your input.',
+      });
+    }
+    // Handle Other Sequelize Errors
+    return res.status(400).json({
+      message: 'Database error occurred.',
+      details: err.message,
+    });
+  }
 
   return res.status(500).json({
     message: err.message,

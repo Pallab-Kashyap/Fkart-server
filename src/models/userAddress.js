@@ -68,7 +68,7 @@ const Address = sequelize.define('Address', {
   },
   country: {
     type: DataTypes.STRING(100),
-    allowNull: true,
+    allowNull: false,
   },
   isDefault: {
     type: DataTypes.BOOLEAN,
