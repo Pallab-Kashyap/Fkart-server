@@ -10,6 +10,7 @@ import Address from './userAddress.js';
 import User from './userModel.js';
 import Cart from './cartModel.js';
 import CartItem from './cartItemModel.js';
+import SquareData from './squareDataModel.js';
 const sycnDB = async () => {
   // OTP
   OTPVerification.belongsTo(User, {
@@ -77,4 +78,5 @@ export {
   Shipment,
   Review,
   OTPVerification,
+  SquareData
 };
