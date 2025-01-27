@@ -1,6 +1,6 @@
 import { DataTypes, UUID, UUIDV4 } from 'sequelize';
 import {sequelize} from '../config/DBConfig.js';
-import { ORDER_STATUS, PAYMENT_METHOD } from '../ENUM.js';
+import { ORDER_STATUS, PAYMENT_METHOD } from '../constants.js';
 
 const generateNumericUUID = () => {
   const timestamp = Date.now().toString().slice(0,6);
