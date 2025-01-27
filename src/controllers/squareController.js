@@ -106,7 +106,7 @@ const squareClient = new Client({
 
 const ENCRYPTION_KEY = process.env.SQUARE_ENCRYPTION_KEY
 const IV = crypto.randomBytes(16);
-
+  
 function encryptToken(accessToken, refreshToken) {
   const combinedToken = `${accessToken}:${refreshToken}`;
   const cipher = crypto.createCipheriv('aes-256-cbc', ENCRYPTION_KEY, IV);

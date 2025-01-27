@@ -24,11 +24,11 @@ const router = express.Router();
 import {
   createCart,
   getCart,
-  // deleteCart,
-  // addItemToCart,
-  // updateCartItem,
-  // deleteCartItem,
-  // clearCart,
+  deleteCart,
+  addItemToCart,
+  updateCartItem,
+  deleteCartItem,
+  clearCart,
   calculateTotalPrice, 
 } from '../controllers/CartController.js'; 
 import auth from '../middlewares/authMiddleware.js';
@@ -36,14 +36,14 @@ import auth from '../middlewares/authMiddleware.js';
 // CART ROUTES
 router.post('/', auth, createCart); 
 router.get('/:user_id', auth, getCart); 
-// router.delete('/:id', auth, deleteCart); 
+router.delete('/:id', auth, deleteCart); 
 
-// // CART ITEM ROUTES
-// router.post('/item', auth, addItemToCart); // 
-// router.put('/item/:id', auth, updateCartItem); // 
-// router.delete('/item/:id', auth, deleteCartItem); // 
+// CART ITEM ROUTES
+router.post('/item', auth, addItemToCart); 
+router.put('/item/:id', auth, updateCartItem); 
+router.delete('/item/:id', auth, deleteCartItem); 
 
-// // ADDITIONAL ROUTES
-// router.delete('/:cart_id/items', auth, clearCart); // 
+// ADDITIONAL ROUTES
+router.delete('/:cart_id/items', auth, clearCart); // 
 router.get('/:cart_id/totalprice', auth, calculateTotalPrice); 
 export default router;

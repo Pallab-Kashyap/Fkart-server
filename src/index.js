@@ -4,7 +4,7 @@ import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-// import sycnDB from './models/index.js';
+import sycnDB from './models/index.js';
 
 //Routes
 import bodyParser from 'body-parser';
@@ -16,7 +16,7 @@ import squareRoute from './routes/squareRoutes.js';
 
 dotenv.config();
 connectDB();
-// sycnDB();
+sycnDB(); 
 
 const app = express();
 
