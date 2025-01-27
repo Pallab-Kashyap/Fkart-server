@@ -11,6 +11,10 @@ import ApiResponse from '../utils/APIResponse.js';
 const createUser = asyncWrapper(async (req, res) => {
   const { userName, email, phoneNumber, password } = req.body;
 
+  if(!userName || !email || !phoneNumber || !password){
+   throw ApiError.badRequest('userName, email, phoneNumber and password are required')
+  }
+
   const existingUser = await User.findOne({
     where: {
       email,
@@ -60,6 +64,10 @@ const createUser = asyncWrapper(async (req, res) => {
 const login = asyncWrapper(async (req, res) => {
   const { phoneNumber, password } = req.body;
 
+  if(!phoneNumber || !password){
+    throw ApiError.badRequest('phoneNumber and password are required')
+   }
+
   const user = await User.findOne({
     where: { phone_number: phoneNumber },
     attributes: ['id', 'password'],
@@ -100,6 +108,10 @@ const changePassword = asyncWrapper(async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = req.userId;
 
+  if(!currentPassword || !newPassword){
+    throw ApiError.badRequest('currentPassword and newPassword are required')
+  }
+
   const user = await User.findByPk(userId, {
     attributes: ['id', 'password'],
   });
@@ -128,7 +140,7 @@ const changePassword = asyncWrapper(async (req, res) => {
     },
   );
 
-  return ApiResponse.success(res, 'Password changed successfully');
+  res.status(200).json({message: 'Password updated successfully'});
 });
 
 export { createUser, login, changePassword };

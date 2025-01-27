@@ -1,4 +1,3 @@
-
 import { DataTypes } from "sequelize";
 import { sequelize } from '../config/DBConfig.js';
 
@@ -20,6 +19,13 @@ const Product = sequelize.define(
     description: {
       type: DataTypes.TEXT,
     },
+    category: {
+      type: DataTypes.ENUM,
+      values: ['men', 'women', 'kids']
+    },
+    sku: {
+      type: DataTypes.JSON,
+    },
     price: {
       type: DataTypes.DECIMAL,
     },
@@ -28,7 +34,7 @@ const Product = sequelize.define(
     },
     image_url: {
       type: DataTypes.STRING(255),
-    } 
+    }
   },
   {
     tableName: "products",

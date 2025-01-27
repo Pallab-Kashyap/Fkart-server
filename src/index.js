@@ -4,7 +4,7 @@ import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-// import sycnDB from './models/index.js';
+import sycnDB from './models/index.js';
 
 //Routes
 import bodyParser from 'body-parser';
@@ -12,11 +12,13 @@ import addToCartRoutes from './routes/addToCartRoutes.js';
 import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js';
 import squareRoute from './routes/squareRoutes.js';
+import productRoute from './routes/productRoutes.js';
+import { fetchSquareCatalogList } from './controllers/squareController.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
 dotenv.config();
 connectDB();
-// sycnDB();
+sycnDB();
 
 const app = express();
 
@@ -65,18 +67,23 @@ app.use('/api/v1/auth', authRoute);
 // table meta data
 // update order, review, address
 
-// PRODUCT
-app.use('/api/v1/square', squareRoute)
-// fetch from square
+// SQUARE
+app.use('/api/v1/square', squareRoute) 
+// authenticate square use.....done 
+// fetch from square.....done
 // update in square
+
+// PRODUCT
+app.use('/api/v1/products', productRoute);
 // store in local db
-// fetch from local db
+// fetch from local db.....done
 // update in local db
 // store in redis
 // fetch from redis
-// get for client
-app.use('/api/v1/cart', addToCartRoutes); // Route registration
+
+
 // CART
+app.use('/api/v1/cart', addToCartRoutes); // Route registration
 // add
 // fetch
 // update
@@ -85,6 +92,10 @@ app.use('/api/v1/cart', addToCartRoutes); // Route registration
 
 // ADDRESS auth(req.userId)
 app.use('/api/v1/addresses', addressRoute);
+app.use('/s', async (req, res) => {
+  const data = await fetchSquareCatalogList()
+  res.json(data)
+})
 
 // ORDER
 // create
@@ -120,34 +131,6 @@ app.use('/api/v1/addresses', addressRoute);
 // fetch
 // update
 // remove
-
-app.get('/api/v1/list-items', async (req, res) => {
-  const accessToken =
-    'EAAAllknGMfOLfzwpIKtAG-5B9SijXTfKSA1cfkLZd7LHe_oMSqu4QHxsDwzAAT5';
-
-  try {
-    const response = await fetch(
-      'https://connect.squareup.com/v2/catalog/list',
-      {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
-    const data = await response.json();
-    console.log(data);
-
-    if (response.ok) {
-      res.json(data);
-    } else {
-      res.status(400).send(response);
-    }
-  } catch (error) {
-    res.status(500).send('Internal Server Error');
-  }
-});
 
 app.use(errorHandler);
 
