@@ -9,7 +9,7 @@ import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiError from '../utils/APIError.js';
 import ApiResponse from '../utils/APIResponse.js';
 import { Op } from 'sequelize';
-import sendOTP from '../utils/twillio.js';
+import sendOTP from '../utils/twilio.js';
 
 const createUser = asyncWrapper(async (req, res) => {
   const { userName, email, phoneNumber, password } = req.body;

@@ -7,11 +7,11 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const from = process.env.TWILIO_PHONE_NUMBER;
 console.log(accountSid, authToken, from);
-if (!accountSid || !authToken || !from) {
-  throw new Error('Missing required Twilio configuration');
-}
+// if (!accountSid || !authToken || !from) {
+//   throw new Error('Missing required Twilio configuration');
+// }
 
-const client = twilio(accountSid, authToken);
+// const client = twilio(accountSid, authToken);
 
 async function sendOTP(otp, to) {
 
@@ -24,11 +24,11 @@ async function sendOTP(otp, to) {
   }
 
   try {
-    const message = await client.messages.create({
-      body: `Your Fkart verification code is ${otp}.\nValid for 10 minutes.\nDo not share this code with anyone.`,
-      from,
-      to: to.startsWith('+') ? to : `+${to}`,
-    });
+    // const message = await client.messages.create({
+    //   body: `Your Fkart verification code is ${otp}.\nValid for 10 minutes.\nDo not share this code with anyone.`,
+    //   from,
+    //   to: to.startsWith('+') ? to : `+${to}`,
+    // });
 
     // return Boolean(message.sid);
     return true;
