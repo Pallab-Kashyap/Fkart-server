@@ -49,7 +49,7 @@ const createUser = asyncWrapper(async (req, res) => {
   const isOTPSent = await sendOTP(OTP, phoneNumber);
 
   if (!isOTPSent) {
-    await user.destroy(); // Rollback user creation
+    await user.destroy(); 
     throw ApiError.internal('Failed to send OTP');
   }
 
@@ -227,7 +227,6 @@ const changePassword = asyncWrapper(async (req, res) => {
 
   res.status(200).json({ message: 'Password updated successfully' });
 });
-
 
 
 export { createUser, login, changePassword, verifyOTP, resendOTP };
