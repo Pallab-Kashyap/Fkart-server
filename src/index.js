@@ -19,7 +19,7 @@ import { fetchSquareCatalogList } from './controllers/squareController.js';
 
 dotenv.config();
 connectDB();
-// sycnDB();
+sycnDB();
 
 const app = express();
 
@@ -49,10 +49,6 @@ app.get('/', (req, res) => {
 // TODO:
 
 // AUTH
-;(async()=> {
-  // await sycnDB()
-  await seedSampleData()
-} )()
 app.use('/api/v1/auth', authRoute);
 // basic auth
 // login
