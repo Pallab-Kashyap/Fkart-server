@@ -88,7 +88,7 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     if (category) whereClause.category = category;
     if (type) whereClause.type = type;
     if (search) whereClause.product_name = { [Op.iLike]: `%{search}%` };
-    if (size) variationWhereClause.size = { [Op.in]: size.split(',') };  // Modified this line
+    if (size) variationWhereClause.size = { [Op.in]: size.split(',') };  
     if (color) variationWhereClause.color = color;
     if (minPrice) variationWhereClause.price = { [Op.gte]: minPrice };
     if (maxPrice) variationWhereClause.price = { ...variationWhereClause.price, [Op.lte]: maxPrice };

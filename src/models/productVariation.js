@@ -32,7 +32,8 @@ const ProductVariation = sequelize.define('ProductVariation', {
         allowNull: false,
     },
     image_url: {
-        type: DataTypes.TEXT,
+        type: DataTypes.ARRAY(DataTypes.TEXT),
+        allowNull: true
     },
 }, {
     tableName: 'product_variations',

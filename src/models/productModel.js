@@ -28,7 +28,8 @@ const Product = sequelize.define(
       values: ['clothing', 'footwear']
     },
     image_url: {
-      type: DataTypes.TEXT,
+      type: DataTypes.ARRAY(DataTypes.TEXT),
+      allowNull: true
     }
   },
   {

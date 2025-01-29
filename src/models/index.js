@@ -70,9 +70,15 @@ const sycnDB = async () => {
   Review.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
 
   try {
+    await Payment.sync();
     await sequelize.sync({ alter: true });
-    await Product.sync();
-    await ProductVariation.sync();
+    // await Product.sync();
+    // await User.sync();
+    // await ProductVariation.sync();
+    // await Address.sync();
+    // await Cart.sync();
+    // await Order.sync();
+    // await OrderItem.sync();
     console.log('sync completed');
   } catch (error) {
     console.log('ERROR', error);
