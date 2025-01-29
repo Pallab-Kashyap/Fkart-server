@@ -23,17 +23,12 @@ const Product = sequelize.define(
       type: DataTypes.ENUM,
       values: ['men', 'women', 'kids']
     },
-    sku: {
-      type: DataTypes.JSON,
-    },
-    price: {
-      type: DataTypes.DECIMAL,
-    },
-    quantity: {
-      type: DataTypes.INTEGER,
+    type: {
+      type: DataTypes.ENUM,
+      values: ['clothing', 'footwear']
     },
     image_url: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.TEXT,
     }
   },
   {

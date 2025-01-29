@@ -11,6 +11,8 @@ import User from './userModel.js';
 import Cart from './cartModel.js';
 import CartItem from './cartItemModel.js';
 import SquareData from './squareDataModel.js';
+import ProductVariation from './productVariation.js';
+
 const sycnDB = async () => {
   // OTP
   OTPVerification.belongsTo(User, {
@@ -24,12 +26,24 @@ const sycnDB = async () => {
   CartItem.belongsTo(Cart, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
 
   Product.hasMany(CartItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
-  CartItem.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+  CartItem.belongsTo(Product, {
+    foreignKey: 'product_id',
+    onDelete: 'CASCADE',
+  });
   // ADDRESS
   User.hasMany(Address, { foreignKey: 'user_id' });
   Address.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
   //  PRODUCT
+  Product.hasMany(ProductVariation, {
+    foreignKey: 'product_id',
+    as: 'variations',
+  });
+
+  ProductVariation.belongsTo(Product, {
+    foreignKey: 'product_id',
+    as: 'product',
+  });
 
   // ORDER
   Order.belongsTo(Address, { foreignKey: 'order_address_id' });
@@ -57,6 +71,8 @@ const sycnDB = async () => {
 
   try {
     await sequelize.sync({ alter: true });
+    await Product.sync();
+    await ProductVariation.sync();
     console.log('sync completed');
   } catch (error) {
     console.log('ERROR', error);
@@ -67,16 +83,17 @@ const sycnDB = async () => {
 export default sycnDB;
 
 export {
-  Cart,          
-  CartItem, 
+  Cart,
+  CartItem,
   User,
   Address,
   Product,
+  ProductVariation,
   Order,
   OrderItem,
   Payment,
   Shipment,
   Review,
   OTPVerification,
-  SquareData
+  SquareData,
 };

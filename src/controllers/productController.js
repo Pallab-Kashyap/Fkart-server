@@ -1,4 +1,5 @@
-import { Product } from "../models/index.js";
+import { Product, ProductVariation } from "../models/index.js";
+import { Op } from "sequelize";
 import ApiError from "../utils/APIError.js";
 import ApiResponse from "../utils/APIResponse.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
@@ -65,67 +66,146 @@ const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
     return ApiResponse.success(res, 'Products synchronized successfully', null);
 });
 
-// Get all products
+// Get all products with filters
 const getAllProducts = asyncWrapper(async (req, res) => {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-    const skip = (page - 1) * limit;
-    
-    const products = await Product.find({})
-        .skip(skip)
-        .limit(limit);
-        
-    if(!products) throw ApiError.internal('error in fetching products from db')
-        
-    ApiResponse.success(res, '', products)
-    
-    res.status(500).send(error);
-    
-})
+    const {
+        category,
+        type,
+        minPrice,
+        maxPrice,
+        size,
+        color,
+        sort = 'createdAt',
+        order = 'DESC',
+        page = 1,
+        limit = 10,
+        search
+    } = req.query;
 
-// Get a single product by ID
-const getProductById = asyncWrapper( async (req, res) => {
-        const productId = req.params.id;
-        if(!productId)
-            throw ApiError.badRequest('productId needed')
+    const whereClause = {};
+    const variationWhereClause = {};
 
-        const product = await Product.findById(productId);
-        if (!product) {
-            throw ApiError.notFound(`product with id: ${productId}, doesn't exist`)
-        }
-        ApiResponse(res, '', product)
+    if (category) whereClause.category = category;
+    if (type) whereClause.type = type;
+    if (search) whereClause.product_name = { [Op.iLike]: `%{search}%` };
+    if (size) variationWhereClause.size = size;
+    if (color) variationWhereClause.color = color;
+    if (minPrice) variationWhereClause.price = { [Op.gte]: minPrice };
+    if (maxPrice) variationWhereClause.price = { ...variationWhereClause.price, [Op.lte]: maxPrice };
+
+    const products = await Product.findAndCountAll({
+        where: whereClause,
+        include: [{
+            model: ProductVariation,
+            as: 'variations',
+            where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined
+        }],
+        order: [[sort, order]],
+        limit,
+        offset: (page - 1) * limit,
+        distinct: true
+    });
+
+    return ApiResponse.success(res, 'Products fetched successfully', {
+        products: products.rows,
+        total: products.count,
+        totalPages: Math.ceil(products.count / limit),
+        currentPage: page
+    });
 });
 
+// Get single product with variations
+const getProductById = asyncWrapper(async (req, res) => {
+    const { id } = req.params;
 
-const updateProduct = async (req, res) => {
-    try {
-        const product = await Product.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!product) {
-            return res.status(404).send();
-        }
-        res.status(200).send(product);
-    } catch (error) {
-        res.status(400).send(error);
-    }
-};
+    const product = await Product.findByPk(id, {
+        include: [{
+            model: ProductVariation,
+            as: 'variations'
+        }]
+    });
 
-// Delete a product by ID
-const deleteProduct = async (req, res) => {
-    try {
-        const product = await Product.findByIdAndDelete(req.params.id);
-        if (!product) {
-            return res.status(404).send();
-        }
-        res.status(200).send(product);
-    } catch (error) {
-        res.status(500).send(error);
+    if (!product) {
+        throw new ApiError(404, 'Product not found');
     }
-};
+
+    return ApiResponse.success(res, 'Product fetched successfully', product);
+});
+
+// Get products by category with variations
+const getProductsByCategory = asyncWrapper(async (req, res) => {
+    const { category } = req.params;
+    const { page = 1, limit = 10 } = req.query;
+
+    const products = await Product.findAndCountAll({
+        where: { category },
+        include: [{
+            model: ProductVariation,
+            as: 'variations'
+        }],
+        limit,
+        offset: (page - 1) * limit,
+        distinct: true
+    });
+
+    return ApiResponse.success(res, 'Products fetched successfully', {
+        products: products.rows,
+        total: products.count,
+        totalPages: Math.ceil(products.count / limit),
+        currentPage: parseInt(page)
+    });
+});
+
+// Search products
+const searchProducts = asyncWrapper(async (req, res) => {
+    const { q } = req.query;
+    const products = await Product.findAll({
+        where: {
+            [Op.or]: [
+                { product_name: { [Op.iLike]: `%${q}%` } },
+                { description: { [Op.iLike]: `%${q}%` } }
+            ]
+        },
+        include: [{
+            model: ProductVariation,
+            as: 'variations'
+        }]
+    });
+    if(products.length === 0) {
+        return ApiResponse.success(res, 'No products found', []);
+    }
+    return ApiResponse.success(res, 'Search results', products);
+});
+
+// Get related products
+const getRelatedProducts = asyncWrapper(async (req, res) => {
+    const { id } = req.params;
+    const product = await Product.findByPk(id);
+
+    if (!product) {
+        throw new ApiError(404, 'Product not found');
+    }
+
+    const relatedProducts = await Product.findAll({
+        where: {
+            category: product.category,
+            id: { [Op.ne]: id }
+        },
+        include: [{
+            model: ProductVariation,
+            as: 'variations'
+        }],
+        limit: 4
+    });
+
+    return ApiResponse.success(res, 'Related products fetched successfully', relatedProducts);
+});
 
 export {
     fetchAndStoreProductFromSquare,
     getAllProducts,
     getProductById,
-    updateProduct,
-    deleteProduct
+    getProductsByCategory,
+    searchProducts,
+    getRelatedProducts,
 }

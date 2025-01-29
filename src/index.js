@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import cors from 'cors';
 import sycnDB from './models/index.js';
 import Product from './models/productModel.js';
+import { seedSampleData } from './utils/seedData.js';
 
 //Routes
 import addToCartRoutes from './routes/addToCartRoutes.js';
@@ -18,7 +19,7 @@ import { fetchSquareCatalogList } from './controllers/squareController.js';
 
 dotenv.config();
 connectDB();
-// sycnDB();
+sycnDB();
 
 const app = express();
 
@@ -135,6 +136,9 @@ app.use(errorHandler);
 
 const port = process.env.POR || 3000;
 
-app.listen(port, () => {
+app.listen(port, async () => {
   console.log(`Server running on port ${port}`);
+  // Uncomment the following lines to seed data (run once)
+  // await sycnDB();
+  // await seedSampleData();
 });
