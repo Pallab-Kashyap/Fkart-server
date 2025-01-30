@@ -12,13 +12,16 @@ import { Op } from 'sequelize';
 import sendOTP from '../utils/twilio.js';
 
 const createUser = asyncWrapper(async (req, res) => {
-  const { userName, email, phoneNumber, password } = req.body;
+  const { userName, email, password } = req.body;
+  let { phoneNumber } = req.body; 
 
   if (!userName || !email || !phoneNumber || !password) {
     throw ApiError.badRequest(
       'userName, email, phoneNumber and password are required'
     );
   }
+
+  phoneNumber = phoneNumber.toString().trim();
 
   const existingUser = await User.findOne({
     where: {
@@ -59,15 +62,17 @@ const createUser = asyncWrapper(async (req, res) => {
     expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
   });
 
-  ApiResponse.created(res, `OTP has been sent to your mobile number`, {OTP});
+  ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
 });
 
 const login = asyncWrapper(async (req, res) => {
-  const { phoneNumber, password } = req.body;
+  let { phoneNumber, password } = req.body;
 
   if (!phoneNumber || !password) {
     throw ApiError.badRequest('phoneNumber and password are required');
   }
+
+  phoneNumber = phoneNumber.toString().trim();
 
   const user = await User.findOne({
     where: { phone_number: phoneNumber },
@@ -83,9 +88,9 @@ const login = asyncWrapper(async (req, res) => {
     throw ApiError.badRequest('Invalid credentials');
   }
   const OTP = generateOTP();
-  const isOTPSnet = await sendOTP(OTP, phoneNumber);
+  const isOTPSent = await sendOTP(OTP, phoneNumber);
 
-  if (!isOTPSnet) {
+  if (!isOTPSent) {
     throw ApiError.internal('Failed to send OTP');
   }
 
@@ -95,7 +100,7 @@ const login = asyncWrapper(async (req, res) => {
     expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
   });
 
-  ApiResponse.created(res, `OTP has been sent to your mobile number`, {OTP});
+  ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
 });
 
 const verifyOTP = asyncWrapper(async (req, res) => {
@@ -186,7 +191,7 @@ const resendOTP = asyncWrapper(async (req, res) => {
     expiration_time: new Date(Date.now() + 10 * 60 * 1000),
   }); 
 
-  ApiResponse.created(res, `OTP has been sent to your mobile number`, {OTP});
+  ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
 });
 
 const changePassword = asyncWrapper(async (req, res) => {

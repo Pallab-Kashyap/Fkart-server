@@ -22,7 +22,7 @@ const sycnDB = async () => {
 
   Cart.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
-  Cart.hasMany(CartItem, { foreignKey: 'cart_id' });
+  Cart.hasMany(CartItem, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
   CartItem.belongsTo(Cart, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
 
   Product.hasMany(CartItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
@@ -31,7 +31,7 @@ const sycnDB = async () => {
     onDelete: 'CASCADE',
   });
   // ADDRESS
-  User.hasMany(Address, { foreignKey: 'user_id' });
+  User.hasMany(Address, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Address.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
   //  PRODUCT
@@ -43,6 +43,7 @@ const sycnDB = async () => {
   ProductVariation.belongsTo(Product, {
     foreignKey: 'product_id',
     as: 'product',
+    onDelete: 'CASCADE',
   });
 
   // ORDER
@@ -64,14 +65,14 @@ const sycnDB = async () => {
   Shipment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
 
   // REVIEW
-  User.hasMany(Review, { foreignKey: 'user_id' });
+  User.hasMany(Review, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Review.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
 
-  Product.hasMany(Review, { foreignKey: 'product_id' });
+  Product.hasMany(Review, { foreignKey: 'product_id', onDelete: 'CASCADE' });
   Review.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
 
   try {
-    // await User.sync();
+    // await User.sync({ force: true });
     // await Product.sync({ force: true });
     // await ProductVariation.sync({ force: true });
     // await Address.sync();

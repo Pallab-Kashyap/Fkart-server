@@ -45,22 +45,8 @@ app.get('/', (req, res) => {
   res.send('Server is up and running');
 });
 
-// app.use('/api/addresses', addressRoutes);
-// TODO:
-
 // AUTH
 app.use('/api/v1/auth', authRoute);
-// basic auth
-// login
-// register
-// forgot password
-// oauth
-// google
-// register
-// login
-// twillio OTP
-// send OTP
-// verify OTP
 
 // USER PROFILE
 // get
@@ -70,25 +56,13 @@ app.use('/api/v1/auth', authRoute);
 
 // SQUARE
 app.use('/api/v1/square', squareRoute) 
-// authenticate square use.....done 
-// fetch from square.....done
-// update in square
 
 // PRODUCT
 app.use('/api/v1/products', productRoute);
-// store in local db
-// fetch from local db.....done
-// update in local db
-// store in redis
-// fetch from redis
 
 // CART
-app.use('/api/v1/cart', addToCartRoutes); // Route registration
-// add
-// fetch
-// update
-// remove
-// total
+app.use('/api/v1/cart', addToCartRoutes);
+
 
 // ADDRESS auth(req.userId)
 app.use('/api/v1/addresses', addressRoute);
@@ -139,6 +113,7 @@ const port = process.env.PORT || 3000;
 const startServer = async () => {
   try {
     await connectDB();
+    // await seedSampleData();
     await sycnDB();
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

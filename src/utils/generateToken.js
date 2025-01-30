@@ -4,11 +4,15 @@ import ApiError from './APIError.js';
 
 dotenv.config();
 
+if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+  throw new ApiError(500, 'Missing JWT secrets');
+}
+
 const generateAccessToken = (userId) => {
   return jwt.sign(
     { userId }, 
     process.env.ACCESS_TOKEN_SECRET,  
-    { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN } 
+    { algorithm: 'HS256', expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN } 
   );
 };
 
@@ -16,7 +20,7 @@ const generateRefreshToken = (userId) => {
   return jwt.sign(
     { userId },  
     process.env.REFRESH_TOKEN_SECRET, 
-    { expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN } 
+    { algorithm: 'HS256', expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN } 
   );
 };
 
@@ -24,20 +28,21 @@ const generateToken = (data, expiry) => {
   return jwt.sign(
     data,
     process.env.ACCESS_TOKEN_SECRET,
-    { expiresIn: expiry || process.env.ACCESS_TOKEN_EXPIRES_IN }
+    { algorithm: 'HS256', expiresIn: expiry || process.env.ACCESS_TOKEN_EXPIRES_IN }
   )
 };
 
 const verifyToken = (token, secret) => { 
     try {
-        return jwt.verify(token, secret);
+        return jwt.verify(token, secret, { algorithms: ['HS256'] });
     } catch (error) {
         throw ApiError.custom(401, 'Ivalid token or token expired');
     }
 }
 
 const generateOTP = () => {
-  return Math.floor(100000 + Math.random() * 900000);
+  const otp =  Math.floor(100000 + Math.random() * 900000);
+  return otp.toLocaleString()
 };
 
 export { generateAccessToken, generateRefreshToken, generateToken, verifyToken, generateOTP };

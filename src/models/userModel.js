@@ -35,7 +35,7 @@ const User = sequelize.define(
       },
     },
     phone_number: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING,
       allowNull: false,
       unique: {
         arg: true,
