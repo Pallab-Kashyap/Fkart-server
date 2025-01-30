@@ -18,8 +18,8 @@ import { fetchSquareCatalogList } from './controllers/squareController.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
 dotenv.config();
-connectDB();
-sycnDB();
+
+
 
 const app = express();
 
@@ -134,11 +134,19 @@ app.use('/s', async (req, res) => {
 
 app.use(errorHandler);
 
-const port = process.env.POR || 3101;
+const port = process.env.POR || 3000;
 
-app.listen(port, async () => {
-  console.log(`Server running on port ${port}`);
-  // Uncomment the following lines to seed data (run once)
-  // await sycnDB();
-  // await seedSampleData();
-});
+const startServer = async () => {
+  try {
+    await connectDB();
+    await sycnDB();
+    app.listen(port, () => {
+      console.log(`Server running on port ${port}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  }
+};
+
+startServer();

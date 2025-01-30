@@ -17,15 +17,15 @@ const Payment = sequelize.define(
         key: 'id',
       },
       onDelete: 'CASCADE',
-    },
+    }, 
     order_id: {
       type: DataTypes.UUID,
-      allowNull: false,
       references: {
         model: 'orders',
-        key: 'id'
-      }
-    }, 
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
     razorpay_payment_id: {
       type: DataTypes.STRING(255),
       unique: true,

@@ -48,6 +48,7 @@ const sycnDB = async () => {
   // ORDER
   Order.belongsTo(Address, { foreignKey: 'order_address_id' });
   Order.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  Order.hasOne(Payment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
 
   // ORDER ITEM
   OrderItem.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
@@ -57,7 +58,7 @@ const sycnDB = async () => {
   });
 
   // PAYMENT
-  Payment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+
 
   // SHIPMENT
   Shipment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
@@ -70,15 +71,18 @@ const sycnDB = async () => {
   Review.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
 
   try {
-    await Payment.sync();
-    await sequelize.sync({ alter: true });
-    // await Product.sync();
     // await User.sync();
-    // await ProductVariation.sync();
+    // await Product.sync({ force: true });
+    // await ProductVariation.sync({ force: true });
     // await Address.sync();
     // await Cart.sync();
+    // await CartItem.sync();
+    // await OTPVerification.sync();
     // await Order.sync();
     // await OrderItem.sync();
+    // await Payment.sync();
+    await sequelize.sync({ alter: true });
+    // await Review.sync();
     console.log('sync completed');
   } catch (error) {
     console.log('ERROR', error);

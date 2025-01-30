@@ -76,13 +76,6 @@ const Order = sequelize.define(
         }
       }
     },
-    payment_id: {
-      type: UUID,
-      references: {
-        model: 'payments',
-        key: 'id',
-      }
-    }
   },
   {
     tableName: 'orders',
