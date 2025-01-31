@@ -106,6 +106,10 @@ app.use('/s', async (req, res) => {
 // update
 // remove
 
+app.post('/web', (req, res) => {
+  res.send('Web is up and running', req.query, req.params, req.body);
+});
+
 app.use(errorHandler);
 
 const port = process.env.PORT || 3000;

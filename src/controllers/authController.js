@@ -4,6 +4,7 @@ import {
   generateAccessToken,
   generateOTP,
   generateRefreshToken,
+  verifyToken,
 } from '../utils/generateToken.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiError from '../utils/APIError.js';
@@ -15,7 +16,7 @@ import { sequelize } from '../config/DBConfig.js';
 const createUser = asyncWrapper(async (req, res) => {
   const transaction = await sequelize.transaction();
   try {
-    const { userName, email, password, phoneNumber } = req.body; 
+    const { userName, email, password, phoneNumber } = req.body;
 
     if (!userName || !email || !phoneNumber || !password) {
       throw ApiError.badRequest(
@@ -25,45 +26,52 @@ const createUser = asyncWrapper(async (req, res) => {
 
     const existingUser = await User.findOne({
       where: {
-        [Op.or]: [
-          { email: email },
-          { phone_number: phoneNumber }
-        ]
+        [Op.or]: [{ email: email }, { phone_number: phoneNumber }],
       },
       attributes: ['id'],
     });
     console.log(existingUser);
 
     if (existingUser) {
-      throw ApiError.badRequest('User already exists with this email or phone number');
+      throw ApiError.badRequest(
+        'User already exists with this email or phone number'
+      );
     }
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = await User.create({
-      userName,
-      email,
-      phone_number: phoneNumber,
-      password: hashedPassword,
-    }, { transaction });
+    const user = await User.create(
+      {
+        userName,
+        email,
+        phone_number: phoneNumber,
+        password: hashedPassword,
+      },
+      { transaction }
+    );
 
     const OTP = generateOTP();
     const isOTPSent = await sendOTP(OTP, phoneNumber);
 
     if (!isOTPSent) {
-      await user.destroy(); 
+      await user.destroy();
       throw ApiError.internal('Failed to send OTP');
     }
 
-    await OTPVerification.create({
-      user_id: user.id,
-      otp_code: OTP,
-      expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
-    }, { transaction });
+    await OTPVerification.create(
+      {
+        user_id: user.id,
+        otp_code: OTP,
+        expiration_time: new Date(Date.now() + 10 * 60 * 1000),
+      },
+      { transaction }
+    );
 
     await transaction.commit();
-    ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
+    ApiResponse.created(res, 'OTP has been sent to your mobile number', {
+      OTP,
+    });
   } catch (error) {
     await transaction.rollback();
     throw new ApiError(500, error.message);
@@ -100,15 +108,20 @@ const login = asyncWrapper(async (req, res) => {
       throw ApiError.internal('Failed to send OTP');
     }
 
-    await OTPVerification.upsert({
-      user_id: user.id,
-      otp_code: OTP,
-      expiration_time: new Date(Date.now() + 10 * 60 * 1000),
-      is_verified: false
-    }, { transaction });
+    await OTPVerification.upsert(
+      {
+        user_id: user.id,
+        otp_code: OTP,
+        expiration_time: new Date(Date.now() + 10 * 60 * 1000),
+        is_verified: false,
+      },
+      { transaction }
+    );
 
     await transaction.commit();
-    ApiResponse.success(res, 'OTP has been sent to your mobile number', {OTP});
+    ApiResponse.success(res, 'OTP has been sent to your mobile number', {
+      OTP,
+    });
   } catch (error) {
     await transaction.rollback();
     throw new ApiError(500, error.message);
@@ -117,7 +130,6 @@ const login = asyncWrapper(async (req, res) => {
 
 const verifyOTP = asyncWrapper(async (req, res) => {
   const { phoneNumber, OTP } = req.body;
-
 
   if (!phoneNumber || !OTP) {
     throw ApiError.badRequest('Phone number and OTP are required');
@@ -136,8 +148,8 @@ const verifyOTP = asyncWrapper(async (req, res) => {
     where: {
       user_id: user.id,
       otp_code: OTP,
-      is_verified: false
-    }
+      is_verified: false,
+    },
   });
 
   if (!otpRecord) {
@@ -146,7 +158,7 @@ const verifyOTP = asyncWrapper(async (req, res) => {
 
   if (otpRecord.created_at) {
     const otpAge = Date.now() - otpRecord.created_at.getTime();
-    if (otpAge > 10 * 60 * 1000) { 
+    if (otpAge > 10 * 60 * 1000) {
       throw ApiError.badRequest('OTP has expired');
     }
   }
@@ -156,8 +168,8 @@ const verifyOTP = asyncWrapper(async (req, res) => {
     {
       where: {
         user_id: user.id,
-        otp_code: OTP
-      }
+        otp_code: OTP,
+      },
     }
   );
 
@@ -171,7 +183,7 @@ const verifyOTP = asyncWrapper(async (req, res) => {
 
   ApiResponse.success(res, 'OTP verified successfully', {
     accessToken,
-    refreshToken
+    refreshToken,
   });
 });
 
@@ -189,7 +201,7 @@ const resendOTP = asyncWrapper(async (req, res) => {
 
   if (!user) {
     throw ApiError.badRequest('User not found');
-  }   
+  }
 
   const OTP = generateOTP();
   const isOTPSent = await sendOTP(OTP, phoneNumber);
@@ -206,12 +218,12 @@ const resendOTP = asyncWrapper(async (req, res) => {
     {
       where: {
         user_id: user.id,
-        is_verified: false
-      }
+        is_verified: false,
+      },
     }
-  ); 
+  );
 
-  ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
+  ApiResponse.created(res, 'OTP has been sent to your mobile number', { OTP });
 });
 
 const changePassword = asyncWrapper(async (req, res) => {
@@ -253,5 +265,53 @@ const changePassword = asyncWrapper(async (req, res) => {
   res.status(200).json({ message: 'Password updated successfully' });
 });
 
+const refreshAccessToken = asyncWrapper(async (req, res) => {
+  const { refreshToken } = req.body;
 
-export { createUser, login, changePassword, verifyOTP, resendOTP };
+  if (!refreshToken) {
+    throw ApiError.badRequest('refreshToken is required');
+  }
+  const refreshTokenSecret = process.env.REFRESH_TOKEN_SECRET;
+
+  if (!refreshTokenSecret) {
+    throw ApiError.internal('Missing JWT secrets');
+  }
+
+  const userId = verifyToken(refreshToken, refreshTokenSecret);
+
+  const user = await User.findOne({
+    where: { refresh_token: refreshToken },
+    attributes: ['id'],
+  });
+
+  if (!user || user.id !== userId) {
+    throw ApiError.badRequest('Invalid refreshToken');
+  }
+
+  const accessToken = generateAccessToken(userId);
+
+  res.status(200).json({ accessToken });
+});
+
+const logout = asyncWrapper(async (req, res) => {
+  const userId = req.userId;
+
+  await User.update(
+    { refresh_token: null },
+    {
+      where: { id: userId },
+    }
+  );
+
+  res.status(200).json({ message: 'Logged out successfully' });
+});
+
+export {
+  createUser,
+  login,
+  changePassword,
+  verifyOTP,
+  resendOTP,
+  refreshAccessToken,
+  logout,
+};

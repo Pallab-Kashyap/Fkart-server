@@ -6,11 +6,15 @@ const auth = asyncWrapper(async (req, res, next) => {
   console.log(req.header('Authorization'));
   let token = req.header('Authorization');
   if (!token || !token.startsWith('Bearer')) {
-    throw ApiError.unauthorized('Unauthorized');
+    throw ApiError.unauthorized('Unauthorized, token is missing or not Bearer token');
   }
 
   token = token.split(' ')[1];
-  const { userId } = verifyToken(token, process.env.ACCESS_TOKEN_SECRET);
+  const accessTokenSecret = process.env.ACCESS_TOKEN_SECRET;
+  if (!accessTokenSecret) {
+    throw ApiError.internal('Access token secret not found');
+  }
+  const userId = verifyToken(token, accessTokenSecret);
 
   if (!userId) {
     throw ApiError.unauthorized('Unauthorized');

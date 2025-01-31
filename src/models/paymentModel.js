@@ -39,7 +39,7 @@ const Payment = sequelize.define(
     payment_method: {
       type: DataTypes.STRING,
     },
-    status: {
+    payment_status: {
       type: DataTypes.STRING,
     },
   },
