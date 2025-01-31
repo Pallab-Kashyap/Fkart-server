@@ -41,8 +41,7 @@ const verifyToken = (token, secret) => {
 }
 
 const generateOTP = () => {
-  const otp =  Math.floor(100000 + Math.random() * 900000);
-  return otp.toLocaleString()
+  return String(Math.floor(100000 + Math.random() * 900000));
 };
 
 export { generateAccessToken, generateRefreshToken, generateToken, verifyToken, generateOTP };

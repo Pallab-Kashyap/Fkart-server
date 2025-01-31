@@ -10,101 +10,114 @@ import ApiError from '../utils/APIError.js';
 import ApiResponse from '../utils/APIResponse.js';
 import { Op } from 'sequelize';
 import sendOTP from '../utils/twilio.js';
+import { sequelize } from '../config/DBConfig.js';
 
 const createUser = asyncWrapper(async (req, res) => {
-  const { userName, email, password } = req.body;
-  let { phoneNumber } = req.body; 
+  const transaction = await sequelize.transaction();
+  try {
+    const { userName, email, password, phoneNumber } = req.body; 
 
-  if (!userName || !email || !phoneNumber || !password) {
-    throw ApiError.badRequest(
-      'userName, email, phoneNumber and password are required'
-    );
+    if (!userName || !email || !phoneNumber || !password) {
+      throw ApiError.badRequest(
+        'userName, email, phoneNumber and password are required'
+      );
+    }
+
+    const existingUser = await User.findOne({
+      where: {
+        [Op.or]: [
+          { email: email },
+          { phone_number: phoneNumber }
+        ]
+      },
+      attributes: ['id'],
+    });
+    console.log(existingUser);
+
+    if (existingUser) {
+      throw ApiError.badRequest('User already exists with this email or phone number');
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const user = await User.create({
+      userName,
+      email,
+      phone_number: phoneNumber,
+      password: hashedPassword,
+    }, { transaction });
+
+    const OTP = generateOTP();
+    const isOTPSent = await sendOTP(OTP, phoneNumber);
+
+    if (!isOTPSent) {
+      await user.destroy(); 
+      throw ApiError.internal('Failed to send OTP');
+    }
+
+    await OTPVerification.create({
+      user_id: user.id,
+      otp_code: OTP,
+      expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
+    }, { transaction });
+
+    await transaction.commit();
+    ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
+  } catch (error) {
+    await transaction.rollback();
+    throw new ApiError(500, error.message);
   }
-
-  phoneNumber = phoneNumber.toString().trim();
-
-  const existingUser = await User.findOne({
-    where: {
-      [Op.or]: [
-        { email: email },
-        { phone_number: phoneNumber }
-      ]
-    },
-    attributes: ['id'],
-  });
-  console.log(existingUser);
-
-  if (existingUser) {
-    throw ApiError.badRequest('User already exists with this email or phone number');
-  }
-
-  const salt = await bcrypt.genSalt(10);
-  const hashedPassword = await bcrypt.hash(password, salt);
-
-  const user = await User.create({
-    userName,
-    email,
-    phone_number: phoneNumber,
-    password: hashedPassword,
-  });
-
-  const OTP = generateOTP();
-  const isOTPSent = await sendOTP(OTP, phoneNumber);
-
-  if (!isOTPSent) {
-    await user.destroy(); 
-    throw ApiError.internal('Failed to send OTP');
-  }
-
-  await OTPVerification.create({
-    user_id: user.id,
-    otp_code: OTP,
-    expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
-  });
-
-  ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
 });
 
 const login = asyncWrapper(async (req, res) => {
-  let { phoneNumber, password } = req.body;
+  const transaction = await sequelize.transaction();
+  try {
+    const { phoneNumber, password } = req.body;
 
-  if (!phoneNumber || !password) {
-    throw ApiError.badRequest('phoneNumber and password are required');
+    if (!phoneNumber || !password) {
+      throw ApiError.badRequest('phoneNumber and password are required');
+    }
+
+    const user = await User.findOne({
+      where: { phone_number: phoneNumber },
+      attributes: ['id', 'password'],
+    });
+
+    if (!user) {
+      throw ApiError.badRequest('User not found');
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      throw ApiError.badRequest('Invalid credentials');
+    }
+
+    const OTP = generateOTP();
+    const isOTPSent = await sendOTP(OTP, phoneNumber);
+
+    if (!isOTPSent) {
+      throw ApiError.internal('Failed to send OTP');
+    }
+
+    await OTPVerification.upsert({
+      user_id: user.id,
+      otp_code: OTP,
+      expiration_time: new Date(Date.now() + 10 * 60 * 1000),
+      is_verified: false
+    }, { transaction });
+
+    await transaction.commit();
+    ApiResponse.success(res, 'OTP has been sent to your mobile number', {OTP});
+  } catch (error) {
+    await transaction.rollback();
+    throw new ApiError(500, error.message);
   }
-
-  phoneNumber = phoneNumber.toString().trim();
-
-  const user = await User.findOne({
-    where: { phone_number: phoneNumber },
-    attributes: ['id', 'password'],
-  });
-
-  if (!user) {
-    throw ApiError.badRequest('Invalid credentials');
-  }
-
-  const match = await bcrypt.compare(password, user.password);
-  if (!match) {
-    throw ApiError.badRequest('Invalid credentials');
-  }
-  const OTP = generateOTP();
-  const isOTPSent = await sendOTP(OTP, phoneNumber);
-
-  if (!isOTPSent) {
-    throw ApiError.internal('Failed to send OTP');
-  }
-
-  await OTPVerification.create({
-    user_id: user.id,
-    otp_code: OTP,
-    expiration_time: new Date(Date.now() + 10 * 60 * 1000), 
-  });
-
-  ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
 });
 
 const verifyOTP = asyncWrapper(async (req, res) => {
   const { phoneNumber, OTP } = req.body;
+
 
   if (!phoneNumber || !OTP) {
     throw ApiError.badRequest('Phone number and OTP are required');
@@ -122,7 +135,7 @@ const verifyOTP = asyncWrapper(async (req, res) => {
   const otpRecord = await OTPVerification.findOne({
     where: {
       user_id: user.id,
-      otp_code: OTP.toString(),
+      otp_code: OTP,
       is_verified: false
     }
   });
@@ -185,11 +198,18 @@ const resendOTP = asyncWrapper(async (req, res) => {
     throw ApiError.internal('Failed to send OTP');
   }
 
-  await OTPVerification.create({
-    user_id: user.id,
-    otp_code: OTP,
-    expiration_time: new Date(Date.now() + 10 * 60 * 1000),
-  }); 
+  await OTPVerification.update(
+    {
+      otp_code: OTP,
+      expiration_time: new Date(Date.now() + 10 * 60 * 1000),
+    },
+    {
+      where: {
+        user_id: user.id,
+        is_verified: false
+      }
+    }
+  ); 
 
   ApiResponse.created(res, 'OTP has been sent to your mobile number', {OTP});
 });
