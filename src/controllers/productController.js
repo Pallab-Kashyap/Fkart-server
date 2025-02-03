@@ -95,19 +95,29 @@ const getAllProducts = asyncWrapper(async (req, res) => {
 
     const products = await Product.findAndCountAll({
         where: whereClause,
+        // attributes: { exclude: ['createdAt', 'updatedAt'], include: ['id'] },
         include: [{
             model: ProductVariation,
             as: 'variations',
-            where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined
+            where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined,
+            attributes: { exclude: ['createdAt', 'updatedAt'] }
         }],
         order: [[sort, order]],
         limit,
         offset: (page - 1) * limit,
-        distinct: true
+        distinct: true,
+    });
+
+    const limitedProducts = products.rows.map(product => {
+        const data = product.toJSON();
+        if (data.variations?.length) {
+            data.variations = [data.variations[0]];
+        }
+        return data;
     });
 
     return ApiResponse.success(res, 'Products fetched successfully', {
-        products: products.rows,
+        products: limitedProducts,
         total: products.count,
         totalPages: Math.ceil(products.count / limit),
         currentPage: page
@@ -145,7 +155,7 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
         }],
         limit,
         offset: (page - 1) * limit,
-        distinct: true
+        distinct: true,
     });
 
     return ApiResponse.success(res, 'Products fetched successfully', {
@@ -195,7 +205,7 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
             model: ProductVariation,
             as: 'variations'
         }],
-        limit: 4
+        limit: 4,
     });
 
     return ApiResponse.success(res, 'Related products fetched successfully', relatedProducts);

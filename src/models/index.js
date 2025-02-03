@@ -12,6 +12,7 @@ import Cart from './cartModel.js';
 import CartItem from './cartItemModel.js';
 import SquareData from './squareDataModel.js';
 import ProductVariation from './productVariation.js';
+// import Category from './categoryModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -45,6 +46,9 @@ const sycnDB = async () => {
     as: 'product',
     onDelete: 'CASCADE',
   });
+
+  // Category.hasMany(Product, { foreignKey: 'category_id', onDelete: 'CASCADE' });
+  // Product.belongsTo(Category, { foreignKey: 'category_id', onDelete: 'CASCADE' });
 
   // ORDER
   Order.belongsTo(Address, { foreignKey: 'order_address_id' });
@@ -82,7 +86,7 @@ const sycnDB = async () => {
     // await Order.sync();
     // await OrderItem.sync();
     // await Payment.sync();
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter : true });
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {
@@ -107,4 +111,5 @@ export {
   Review,
   OTPVerification,
   SquareData,
+  // Category,
 };

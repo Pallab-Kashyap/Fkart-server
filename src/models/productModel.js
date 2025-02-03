@@ -30,7 +30,15 @@ const Product = sequelize.define(
     image_url: {
       type: DataTypes.ARRAY(DataTypes.TEXT),
       allowNull: true
-    }
+    },
+    // category_id: {
+    //   type: DataTypes.INTEGER,
+    //   references: {
+    //     model: 'categories',
+    //     key: 'id',
+    //   },
+    //   allowNull: true,
+    // }
   },
   {
     tableName: "products",

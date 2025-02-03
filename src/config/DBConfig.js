@@ -8,6 +8,7 @@ const sequelize = new Sequelize(process.env.DB_CONNECTION_URL_RAILWAY, {
   dialectOptions: {
 
   },
+  logging: false
 });
 
 const connectDB = async () => {
