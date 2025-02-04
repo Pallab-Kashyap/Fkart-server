@@ -74,6 +74,9 @@ const createUser = asyncWrapper(async (req, res) => {
     });
   } catch (error) {
     await transaction.rollback();
+    if (error instanceof ApiError) {
+      throw error;
+    }
     throw new ApiError(500, error.message);
   }
 });
@@ -124,6 +127,9 @@ const login = asyncWrapper(async (req, res) => {
     });
   } catch (error) {
     await transaction.rollback();
+    if (error instanceof ApiError) {
+      throw error;
+    }
     throw new ApiError(500, error.message);
   }
 });

@@ -17,14 +17,13 @@ const errorHandler = (err, req, res, next) => {
         message: 'Duplicate value detected. Please check your input.',
       });
     }
-    // Handle Other Sequelize Errors
+    // Handle Other Sequelize Errors;
     return res.status(400).json({
       status: false,
       message: 'Database error occurred.',
       details: err.message,
     });
   }
-
   return res.status(500).json({
     status: false,
     message: err.message,
