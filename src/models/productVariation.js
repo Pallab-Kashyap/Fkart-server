@@ -59,9 +59,18 @@ const ProductVariation = sequelize.define(
   }
 );
 
+ProductVariation.addHook('beforeCreate', (variation) => {
+  variation.dataValues.in_stock = variation.dataValues.stock_quantity > 0;
+});
 
-ProductVariation.addHook('beforeSave', (variation) => {
-  variation.in_stock = variation.stock_quantity > 0;
+ProductVariation.addHook('beforeUpdate', (variation) => {
+  variation.dataValues.in_stock = variation.dataValues.stock_quantity > 0;
+});
+
+ProductVariation.addHook('beforeSave', async (variation) => {
+  // Using get() to access the current value
+  const stockQty = variation.get('stock_quantity');
+  variation.set('in_stock', stockQty > 0);
 });
 
 export default ProductVariation;

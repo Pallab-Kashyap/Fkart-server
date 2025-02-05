@@ -1,10 +1,10 @@
-
 import express from 'express';
-import { getRootCategories, getSubCategories } from '../controllers/categoryController.js';
+import { getAllCategories, getRootCategories, getSubCategories } from '../controllers/categoryController.js';
 
 const router = express.Router();
 
-router.get('/', getRootCategories);
-router.get('/:categoryId/subcategories', getSubCategories);
+router.get('/', getAllCategories);
+router.get('/root', getRootCategories);
+router.get('/:parent_id', getSubCategories);
 
 export default router;

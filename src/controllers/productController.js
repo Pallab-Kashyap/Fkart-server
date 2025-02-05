@@ -10,7 +10,8 @@ import { sequelize } from "../config/DBConfig.js";
 const getCategoryByName = async (categoryName) => {
     // First try to find as a subcategory (e.g., "clothing-men")
     let category = await Category.findOne({
-        where: { name: categoryName }
+        where: { name: categoryName },
+        attributes: { exclude: ['createdAt', 'updatedAt', 'square_category_id'] }
     });
 
     // If not found, try to find as a segment (e.g., "men")
@@ -105,8 +106,8 @@ const getAllProducts = asyncWrapper(async (req, res) => {
         maxPrice,
         size,
         color,
-        sort = 'createdAt',
-        order = 'DESC',
+        // sort = 'createdAt',
+        // order = 'DESC',
         page = 1,
         limit = 10,
         search
@@ -134,26 +135,31 @@ const getAllProducts = asyncWrapper(async (req, res) => {
             {
                 model: ProductVariation,
                 as: 'variations',
-                where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined
+                where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined,
+                attributes: { exclude: [ 'createdAt', 'updatedAt'] }
             },
             {
                 model: Category,
                 as: 'category',
-                attributes: ['id', 'name', 'parent_id']
+                attributes: { exclude: ['createdAt', 'updatedAt', 'square_category_id'] }
             }
         ],
-        order: [[sort, order]],
+        // order: [[sort, order]],
         limit,
         offset: (page - 1) * limit,
         distinct: true,
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
     });
 
     // Take only first variation for list view
     const processedProducts = products.rows.map(product => {
         const data = product.toJSON();
+        // Ensure variations is always an array
         if (data.variations?.length) {
-            data.variation = data.variations[0];  // Store first variation separately
-            delete data.variations;  // Remove variations array
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
         }
         return data;
     });
@@ -173,8 +179,10 @@ const getProductById = asyncWrapper(async (req, res) => {
     const product = await Product.findByPk(id, {
         include: [{
             model: ProductVariation,
-            as: 'variations'
-        }]
+            as: 'variations',
+            attributes: { exclude: ['createdAt', 'updatedAt'] }
+        }],
+        attributes: { exclude: ['createdAt', 'updatedAt', 'square_product_id'] }
     });
 
     if (!product) {
@@ -199,7 +207,8 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
         include: [
             {
                 model: ProductVariation,
-                as: 'variations'
+                as: 'variations',
+                attributes: { exclude: ['createdAt', 'updatedAt'] }
             },
             {
                 model: Category,
@@ -210,13 +219,16 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
         limit,
         offset: (page - 1) * limit,
         distinct: true,
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
     });
 
     const processedProducts = products.rows.map(product => {
         const data = product.toJSON();
         if (data.variations?.length) {
-            data.variation = data.variations[0];
-            delete data.variations;
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
         }
         return data;
     });
@@ -240,8 +252,10 @@ const searchProducts = asyncWrapper(async (req, res) => {
         },
         include: [{
             model: ProductVariation,
-            as: 'variations'
-        }]
+            as: 'variations',
+            attributes: { exclude: ['createdAt', 'updatedAt'] }
+        }],
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
     });
 
     if(products.length === 0) {
@@ -251,8 +265,10 @@ const searchProducts = asyncWrapper(async (req, res) => {
     const processedProducts = products.map(product => {
         const data = product.toJSON();
         if (data.variations?.length) {
-            data.variation = data.variations[0];
-            delete data.variations;
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
         }
         return data;
     });
@@ -270,7 +286,8 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
             attributes: ['id', 'name', 'parent_id'],
             include: [{
                 model: Category,
-                as: 'parentCategory'
+                as: 'parentCategory',
+                attributes: ['id', 'name', 'parent_id']
             }]
         }]
     });
@@ -301,18 +318,22 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
             },
             {
                 model: ProductVariation,
-                as: 'variations'
+                as: 'variations',
+                attributes: { exclude: ['createdAt', 'updatedAt'] }
             }
         ],
         order: sequelize.random(),  
         limit: 4,
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
     });
 
     const processedProducts = relatedProducts.map(product => {
         const data = product.toJSON();
         if (data.variations?.length) {
-            data.variation = data.variations[0];
-            delete data.variations;
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
         }
         return data;
     });

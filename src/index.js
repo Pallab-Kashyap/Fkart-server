@@ -14,6 +14,7 @@ import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js';
 import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
+import categoryRoute from './routes/categoryRoutes.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
@@ -59,6 +60,7 @@ app.use('/api/v1/square', squareRoute)
 
 // PRODUCT
 app.use('/api/v1/products', productRoute);
+app.use('/api/v1/categories', categoryRoute)
 
 // CART
 app.use('/api/v1/cart', addToCartRoutes);
