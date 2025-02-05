@@ -98,7 +98,7 @@ const sycnDB = async () => {
     // await Order.sync();
     // await OrderItem.sync();
     // await Payment.sync();
-    await sequelize.sync({ force: true });
+    await sequelize.sync({ alter: true });
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {
