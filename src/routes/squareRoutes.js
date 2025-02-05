@@ -1,6 +1,6 @@
 import express from "express";
 import { Router } from "express";
-import { authorizeSquare, fetchSquareCatalogList, squareCallback } from "../controllers/squareController.js";
+import { authorizeSquare, fetchSquareCatalogList, squareCallback, updateSquareInventory } from "../controllers/squareController.js";
 
 const router = Router();
 
@@ -23,5 +23,10 @@ router.get("/callback", squareCallback)
 
 //Interact with Square API
 router.get("/items", fetchSquareCatalogList)
+router.post("/inv", async (req, res) => {
+  const { catalogId}    = req.body;
+  const response = await updateSquareInventory(catalogId)
+  res.json(response)
+})
 
 export default router;

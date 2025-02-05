@@ -117,8 +117,8 @@ const port = process.env.PORT || 3000;
 const startServer = async () => {
   try {
     await connectDB();
-    // await seedSampleData()
     await sycnDB();
+    await seedSampleData()
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });

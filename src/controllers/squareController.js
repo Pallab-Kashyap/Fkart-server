@@ -180,4 +180,19 @@ const fetchSquareCatalogList = async () => {
   }
 };
 
-export { authorizeSquare, squareCallback, fetchSquareCatalogList };
+const updateSquareInventory = async (catalogObjectIds) => {
+  try {
+    const response = await squareClient.inventoryApi.batchRetrieveInventoryCounts({
+      catalogObjectIds,
+    });
+    // .then(response => response.json());
+
+    console.log('INVENTORY RESPONSE', response.result.counts);
+    return response.result.counts;
+  } catch (error) {
+    console.error('Error fetching inventory:', error);
+    throw new Error('Failed to fetch inventory');
+  }
+};
+
+export { authorizeSquare, squareCallback, fetchSquareCatalogList, updateSquareInventory };

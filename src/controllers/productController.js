@@ -1,10 +1,9 @@
-import { Product, ProductVariation } from "../models/index.js";
+import { Product, ProductVariation, Category } from "../models/index.js";
 import { Op } from "sequelize";
 import ApiError from "../utils/APIError.js";
 import ApiResponse from "../utils/APIResponse.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import { fetchSquareCatalogList } from "./squareController.js";
-
 
 const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
     const responseData = await fetchSquareCatalogList();
@@ -66,11 +65,28 @@ const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
     return ApiResponse.success(res, 'Products synchronized successfully', null);
 });
 
+// Modified helper function to get category by name
+const getCategoryByName = async (categoryName) => {
+    const category = await Category.findOne({
+        where: { name: categoryName }
+    });
+    if (!category) return null;
+    
+    if (category.parent_id === null) {
+        // If root category, get all subcategories
+        const subcategories = await Category.findAll({
+            where: { parent_id: category.id }
+        });
+        return [category.id, ...subcategories.map(sub => sub.id)];
+    }
+    // If subcategory, return just that ID
+    return [category.id];
+};
+
 // Get all products with filters
 const getAllProducts = asyncWrapper(async (req, res) => {
     const {
-        category,
-        type,
+        category,  // Now accepts 'clothing' or 'clothing-men' format
         minPrice,
         maxPrice,
         size,
@@ -85,23 +101,34 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     const whereClause = {};
     const variationWhereClause = {};
 
-    if (category) whereClause.category = category;
-    if (type) whereClause.type = type;
-    if (search) whereClause.product_name = { [Op.iLike]: `%{search}%` };
-    if (size) variationWhereClause.size = { [Op.in]: size.split(',') };  
+    if (category) {
+        const categoryIds = await getCategoryByName(category);
+        if (categoryIds?.length) {
+            whereClause.category_id = { [Op.in]: categoryIds };
+        }
+    }
+
+    if (search) whereClause.product_name = { [Op.iLike]: `%${search}%` };
+    if (size) variationWhereClause.size = { [Op.in]: size.split(',') };
     if (color) variationWhereClause.color = color;
     if (minPrice) variationWhereClause.price = { [Op.gte]: minPrice };
     if (maxPrice) variationWhereClause.price = { ...variationWhereClause.price, [Op.lte]: maxPrice };
 
     const products = await Product.findAndCountAll({
         where: whereClause,
-        // attributes: { exclude: ['createdAt', 'updatedAt'], include: ['id'] },
-        include: [{
-            model: ProductVariation,
-            as: 'variations',
-            where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined,
-            attributes: { exclude: ['createdAt', 'updatedAt'] }
-        }],
+        include: [
+            {
+                model: ProductVariation,
+                as: 'variations',
+                where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined,
+                attributes: { exclude: ['createdAt', 'updatedAt'] }
+            },
+            {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name', 'parent_id']
+            }
+        ],
         order: [[sort, order]],
         limit,
         offset: (page - 1) * limit,
@@ -142,17 +169,29 @@ const getProductById = asyncWrapper(async (req, res) => {
     return ApiResponse.success(res, 'Product fetched successfully', product);
 });
 
-// Get products by category with variations
+// Update getProductsByCategory to use names instead of IDs
 const getProductsByCategory = asyncWrapper(async (req, res) => {
-    const { category } = req.params;
+    const { categoryName } = req.params;  // Changed from categoryId
     const { page = 1, limit = 10 } = req.query;
 
+    const categoryIds = await getCategoryByName(categoryName);
+    if (!categoryIds) {
+        throw new ApiError(404, 'Category not found');
+    }
+
     const products = await Product.findAndCountAll({
-        where: { category },
-        include: [{
-            model: ProductVariation,
-            as: 'variations'
-        }],
+        where: { category_id: { [Op.in]: categoryIds } },
+        include: [
+            {
+                model: ProductVariation,
+                as: 'variations'
+            },
+            {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name', 'display_name', 'parent_id']
+            }
+        ],
         limit,
         offset: (page - 1) * limit,
         distinct: true,
@@ -196,15 +235,24 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
         throw new ApiError(404, 'Product not found');
     }
 
+    const categoryIds = await getCategoryByName(product.category_id);
+
     const relatedProducts = await Product.findAll({
         where: {
-            category: product.category,
+            category_id: { [Op.in]: categoryIds },
             id: { [Op.ne]: id }
         },
-        include: [{
-            model: ProductVariation,
-            as: 'variations'
-        }],
+        include: [
+            {
+                model: ProductVariation,
+                as: 'variations'
+            },
+            {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name', 'parent_id']
+            }
+        ],
         limit: 4,
     });
 
