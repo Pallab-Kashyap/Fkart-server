@@ -9,39 +9,46 @@ if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
 }
 
 const generateAccessToken = (userId) => {
-  return jwt.sign(
-    { userId }, 
-    process.env.ACCESS_TOKEN_SECRET,  
-    { algorithm: 'HS256', expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN } 
-  );
+  return jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+  });
 };
 
 const generateRefreshToken = (userId) => {
-  return jwt.sign(
-    { userId },  
-    process.env.REFRESH_TOKEN_SECRET, 
-    { algorithm: 'HS256', expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN } 
-  );
+  return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+  });
 };
 
 const generateToken = (data, expiry) => {
-  return jwt.sign(
-    data,
-    process.env.ACCESS_TOKEN_SECRET,
-    { algorithm: 'HS256', expiresIn: expiry || process.env.ACCESS_TOKEN_EXPIRES_IN }
-  )
+  return jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, {
+    algorithm: 'HS256',
+    expiresIn: expiry || process.env.ACCESS_TOKEN_EXPIRES_IN,
+  });
 };
 
-const verifyToken = (token, secret) => { 
-    try {
-        return jwt.verify(token, secret, { algorithms: ['HS256'] });
-    } catch (error) {
-        throw ApiError.custom(401, 'Ivalid token or token expired');
+const verifyToken = (token, secret) => {
+  try {
+    const { userId } = jwt.verify(token, secret, { algorithms: ['HS256'] });
+    return userId;
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      throw ApiError.custom(401, 'Token expired');
     }
-}
+    throw ApiError.custom(401, 'Invalid token');
+  }
+};
 
 const generateOTP = () => {
   return String(Math.floor(100000 + Math.random() * 900000));
 };
 
-export { generateAccessToken, generateRefreshToken, generateToken, verifyToken, generateOTP };
+export {
+  generateAccessToken,
+  generateRefreshToken,
+  generateToken,
+  verifyToken,
+  generateOTP,
+};

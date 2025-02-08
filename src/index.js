@@ -14,6 +14,7 @@ import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js';
 import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
+import categoryRoute from './routes/categoryRoutes.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
@@ -59,6 +60,7 @@ app.use('/api/v1/square', squareRoute)
 
 // PRODUCT
 app.use('/api/v1/products', productRoute);
+app.use('/api/v1/categories', categoryRoute)
 
 // CART
 app.use('/api/v1/cart', addToCartRoutes);
@@ -106,6 +108,10 @@ app.use('/s', async (req, res) => {
 // update
 // remove
 
+app.post('/web', (req, res) => {
+  res.send('Web is up and running', req.query, req.params, req.body);
+});
+
 app.use(errorHandler);
 
 const port = process.env.PORT || 3000;
@@ -113,8 +119,8 @@ const port = process.env.PORT || 3000;
 const startServer = async () => {
   try {
     await connectDB();
-    // await seedSampleData();
     await sycnDB();
+    // await seedSampleData()
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);
     });

@@ -35,7 +35,7 @@ import auth from '../middlewares/authMiddleware.js';
 
 // CART ROUTES
 router.post('/', auth, createCart); 
-router.get('/:user_id', auth, getCart); 
+router.get('/', auth, getCart); 
 router.delete('/:id', auth, deleteCart); 
 
 // CART ITEM ROUTES

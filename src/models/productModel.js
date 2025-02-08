@@ -19,17 +19,17 @@ const Product = sequelize.define(
     description: {
       type: DataTypes.TEXT,
     },
-    category: {
-      type: DataTypes.ENUM,
-      values: ['men', 'women', 'kids']
-    },
-    type: {
-      type: DataTypes.ENUM,
-      values: ['clothing', 'footwear']
-    },
     image_url: {
       type: DataTypes.ARRAY(DataTypes.TEXT),
       allowNull: true
+    },
+    category_id: {
+      type: DataTypes.UUID,
+      references: {
+        model: 'categories',
+        key: 'id',
+      },
+      allowNull: true,
     }
   },
   {

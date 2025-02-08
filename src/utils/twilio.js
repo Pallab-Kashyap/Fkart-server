@@ -16,7 +16,7 @@ const client = twilio(accountSid, authToken);
 async function sendOTP(otp, to) {
 
   to = '+' + to;
-  console.log(from ,to);
+  // console.log(from ,to);
   // Validate phone number format (basic check)
   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
   if (!phoneRegex.test(to.startsWith('+') ? to : `+${to}`)) {
@@ -24,15 +24,16 @@ async function sendOTP(otp, to) {
   }
 
   try {
-    const message = await client.messages.create({
-      body: `Your Fkart verification code is ${otp}.\nValid for 10 minutes.\nDo not share this code with anyone.`,
-      from,
-      to,
-    });
+    // const message = await client.messages.create({
+    //   body: `Your Fkart verification code is ${otp}.\nValid for 10 minutes.\nDo not share this code with anyone.`,
+    //   from,
+    //   to,
+    // });
 
-    return Boolean(message.sid);
+    // return Boolean(message.sid);
+    return true
   } catch (error) {
-    console.error('Twilio Error:',  error);
+    // console.error('Twilio Error:',  error);
     return true
   }
 }

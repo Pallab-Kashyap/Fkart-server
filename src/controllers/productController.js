@@ -1,10 +1,42 @@
-import { Product, ProductVariation } from "../models/index.js";
+import { Category, Product, ProductVariation } from "../models/index.js";
 import { Op } from "sequelize";
 import ApiError from "../utils/APIError.js";
 import ApiResponse from "../utils/APIResponse.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import { fetchSquareCatalogList } from "./squareController.js";
+import { sequelize } from "../config/DBConfig.js";
 
+// Add this helper function after imports
+const getCategoryByName = async (categoryName) => {
+    // First try to find as a subcategory (e.g., "clothing-men")
+    let category = await Category.findOne({
+        where: { name: categoryName },
+        attributes: { exclude: ['createdAt', 'updatedAt', 'square_category_id'] }
+    });
+
+    // If not found, try to find as a segment (e.g., "men")
+    if (!category) {
+        const categories = await Category.findAll({
+            where: {
+                name: {
+                    [Op.like]: `%-${categoryName}`
+                }
+            }
+        });
+        return categories.map(cat => cat.id);
+    }
+
+    // If it's a root category (e.g., "clothing"), get all its subcategories
+    if (category.parent_id === null) {
+        const subcategories = await Category.findAll({
+            where: { parent_id: category.id }
+        });
+        return [category.id, ...subcategories.map(sub => sub.id)];
+    }
+
+    // If it's a specific category, return just that ID
+    return [category.id];
+};
 
 const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
     const responseData = await fetchSquareCatalogList();
@@ -70,13 +102,12 @@ const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
 const getAllProducts = asyncWrapper(async (req, res) => {
     const {
         category,
-        type,
         minPrice,
         maxPrice,
         size,
         color,
-        sort = 'createdAt',
-        order = 'DESC',
+        // sort = 'createdAt',
+        // order = 'DESC',
         page = 1,
         limit = 10,
         search
@@ -85,32 +116,59 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     const whereClause = {};
     const variationWhereClause = {};
 
-    if (category) whereClause.category = category;
-    if (type) whereClause.type = type;
+    if (category) {
+        const categoryIds = await getCategoryByName(category);
+        if (categoryIds?.length) {
+            whereClause.category_id = { [Op.in]: categoryIds };
+        }
+    }
+
     if (search) whereClause.product_name = { [Op.iLike]: `%{search}%` };
-    if (size) variationWhereClause.size = { [Op.in]: size.split(',') };  
+    if (size) variationWhereClause.size = { [Op.in]: size.split(',') };
     if (color) variationWhereClause.color = color;
     if (minPrice) variationWhereClause.price = { [Op.gte]: minPrice };
     if (maxPrice) variationWhereClause.price = { ...variationWhereClause.price, [Op.lte]: maxPrice };
 
     const products = await Product.findAndCountAll({
         where: whereClause,
-        include: [{
-            model: ProductVariation,
-            as: 'variations',
-            where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined
-        }],
-        order: [[sort, order]],
+        include: [
+            {
+                model: ProductVariation,
+                as: 'variations',
+                where: Object.keys(variationWhereClause).length ? variationWhereClause : undefined,
+                attributes: { exclude: [ 'createdAt', 'updatedAt'] }
+            },
+            {
+                model: Category,
+                as: 'category',
+                attributes: { exclude: ['createdAt', 'updatedAt', 'square_category_id'] }
+            }
+        ],
+        // order: [[sort, order]],
         limit,
         offset: (page - 1) * limit,
-        distinct: true
+        distinct: true,
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
+    });
+
+    // Take only first variation for list view
+    const processedProducts = products.rows.map(product => {
+        const data = product.toJSON();
+        // Ensure variations is always an array
+        if (data.variations?.length) {
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
+        }
+        return data;
     });
 
     return ApiResponse.success(res, 'Products fetched successfully', {
-        products: products.rows,
-        total: products.count,
+        products: processedProducts,
+        totalItems: products.count,
         totalPages: Math.ceil(products.count / limit),
-        currentPage: page
+        currentPage: Number(page)
     });
 });
 
@@ -121,8 +179,10 @@ const getProductById = asyncWrapper(async (req, res) => {
     const product = await Product.findByPk(id, {
         include: [{
             model: ProductVariation,
-            as: 'variations'
-        }]
+            as: 'variations',
+            attributes: { exclude: ['createdAt', 'updatedAt'] }
+        }],
+        attributes: { exclude: ['createdAt', 'updatedAt', 'square_product_id'] }
     });
 
     if (!product) {
@@ -137,26 +197,50 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
     const { category } = req.params;
     const { page = 1, limit = 10 } = req.query;
 
+    const categoryIds = await getCategoryByName(category);
+    if (!categoryIds?.length) {
+        throw new ApiError(404, 'Category not found');
+    }
+
     const products = await Product.findAndCountAll({
-        where: { category },
-        include: [{
-            model: ProductVariation,
-            as: 'variations'
-        }],
+        where: { category_id: { [Op.in]: categoryIds } },
+        include: [
+            {
+                model: ProductVariation,
+                as: 'variations',
+                attributes: { exclude: ['createdAt', 'updatedAt'] }
+            },
+            {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name', 'parent_id']
+            }
+        ],
         limit,
         offset: (page - 1) * limit,
-        distinct: true
+        distinct: true,
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
+    });
+
+    const processedProducts = products.rows.map(product => {
+        const data = product.toJSON();
+        if (data.variations?.length) {
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
+        }
+        return data;
     });
 
     return ApiResponse.success(res, 'Products fetched successfully', {
-        products: products.rows,
-        total: products.count,
+        products: processedProducts,
+        totalItems: products.count,
         totalPages: Math.ceil(products.count / limit),
-        currentPage: parseInt(page)
+        currentPage: Number(page)
     });
 });
 
-// Search products
 const searchProducts = asyncWrapper(async (req, res) => {
     const { q } = req.query;
     const products = await Product.findAll({
@@ -168,37 +252,93 @@ const searchProducts = asyncWrapper(async (req, res) => {
         },
         include: [{
             model: ProductVariation,
-            as: 'variations'
-        }]
+            as: 'variations',
+            attributes: { exclude: ['createdAt', 'updatedAt'] }
+        }],
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
     });
+
     if(products.length === 0) {
         return ApiResponse.success(res, 'No products found', []);
     }
-    return ApiResponse.success(res, 'Search results', products);
+
+    const processedProducts = products.map(product => {
+        const data = product.toJSON();
+        if (data.variations?.length) {
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
+        }
+        return data;
+    });
+
+    return ApiResponse.success(res, 'Search results', processedProducts);
 });
 
 // Get related products
 const getRelatedProducts = asyncWrapper(async (req, res) => {
     const { id } = req.params;
-    const product = await Product.findByPk(id);
+    const mainProduct = await Product.findByPk(id, {  // Changed variable name from product to mainProduct
+        include: [{
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name', 'parent_id'],
+            include: [{
+                model: Category,
+                as: 'parentCategory',
+                attributes: ['id', 'name', 'parent_id']
+            }]
+        }]
+    });
 
-    if (!product) {
+    if (!mainProduct) {
         throw new ApiError(404, 'Product not found');
     }
 
+    // Get root category id (either parent category id or current category id if it's root)
+    const rootCategoryId = mainProduct.category?.parent_id || mainProduct.category_id;
+
+    // Find products in the same root category
     const relatedProducts = await Product.findAll({
         where: {
-            category: product.category,
             id: { [Op.ne]: id }
         },
-        include: [{
-            model: ProductVariation,
-            as: 'variations'
-        }],
-        limit: 4
+        include: [
+            {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name', 'parent_id'],
+                where: {
+                    [Op.or]: [
+                        { id: rootCategoryId },           // Include root category
+                        { parent_id: rootCategoryId }     // Include all subcategories
+                    ]
+                }
+            },
+            {
+                model: ProductVariation,
+                as: 'variations',
+                attributes: { exclude: ['createdAt', 'updatedAt'] }
+            }
+        ],
+        order: sequelize.random(),  
+        limit: 4,
+        attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] }
     });
 
-    return ApiResponse.success(res, 'Related products fetched successfully', relatedProducts);
+    const processedProducts = relatedProducts.map(product => {
+        const data = product.toJSON();
+        if (data.variations?.length) {
+            // Keep variations array but limited to first variation
+            data.variations = [data.variations[0]];
+        } else {
+            data.variations = [];
+        }
+        return data;
+    });
+
+    return ApiResponse.success(res, 'Related products fetched successfully', processedProducts);
 });
 
 export {

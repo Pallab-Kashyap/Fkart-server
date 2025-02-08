@@ -9,7 +9,7 @@ import ApiError from '../utils/APIError.js';
 export const createAddress = asyncWrapper(async (req, res) => {
   const userId = req.userId;
  req.body.user_id = userId;
-  const existingAddresses = await Address.findAll({ where: { user_id: userId } });
+const existingAddresses = await Address.findAll({ where: { user_id: userId },attributes:{exclude:["user_id","createdAt","updatedAt"]} });
   if (existingAddresses.length === 0) {
     req.body.isDefault = true; 
   }

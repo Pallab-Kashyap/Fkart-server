@@ -12,6 +12,8 @@ import Cart from './cartModel.js';
 import CartItem from './cartItemModel.js';
 import SquareData from './squareDataModel.js';
 import ProductVariation from './productVariation.js';
+import Category from './categoryModel.js';
+// import Category from './categoryModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -25,11 +27,12 @@ const sycnDB = async () => {
   Cart.hasMany(CartItem, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
   CartItem.belongsTo(Cart, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
 
-  Product.hasMany(CartItem, { foreignKey: 'product_id', onDelete: 'CASCADE' });
-  CartItem.belongsTo(Product, {
-    foreignKey: 'product_id',
+  ProductVariation.hasMany(CartItem, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
+CartItem.belongsTo(ProductVariation, {
+    foreignKey: 'product_variation_id',
+    as: 'product_variation',
     onDelete: 'CASCADE',
-  });
+});
   // ADDRESS
   User.hasMany(Address, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Address.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
@@ -45,6 +48,20 @@ const sycnDB = async () => {
     as: 'product',
     onDelete: 'CASCADE',
   });
+
+  // Add Product-Category association
+  Product.belongsTo(Category, {
+    foreignKey: 'category_id',
+    as: 'category'
+  });
+  Category.hasMany(Product, {
+    foreignKey: 'category_id',
+    as: 'products'
+  });
+
+  // CATEGORY
+  Category.hasMany(Category, { foreignKey: 'parent_id', as: 'subcategories' });
+  Category.belongsTo(Category, { foreignKey: 'parent_id', as: 'parentCategory' });
 
   // ORDER
   Order.belongsTo(Address, { foreignKey: 'order_address_id' });
@@ -82,7 +99,7 @@ const sycnDB = async () => {
     // await Order.sync();
     // await OrderItem.sync();
     // await Payment.sync();
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({});
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {
@@ -107,4 +124,5 @@ export {
   Review,
   OTPVerification,
   SquareData,
+  Category,
 };

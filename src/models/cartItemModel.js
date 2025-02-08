@@ -16,11 +16,11 @@ const CartItem = sequelize.define('CartItem', {
             key: 'id',
         },
     },
-    product_id: { 
-        type: DataTypes.UUID, // Change to DataTypes.UUID 
+    product_variation_id: { 
+        type: DataTypes.UUID,
         allowNull: false,
         references: {
-            model: 'products', 
+            model: 'product_variations',
             key: 'id',
         },
     },
@@ -35,8 +35,5 @@ const CartItem = sequelize.define('CartItem', {
 }, {
     tableName: 'cart_items', 
 });
-// CartItem.associate = (models) => {
-//     CartItem.belongsTo(models.Cart, { foreignKey: "cart_id", onDelete: "CASCADE" }); // Item belongs to one cart
-//     CartItem.belongsTo(models.Product, { foreignKey: "product_id", onDelete: "CASCADE" }); // Item is associated with one product
-//   };
+
 export default CartItem
