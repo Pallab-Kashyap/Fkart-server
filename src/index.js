@@ -7,6 +7,7 @@ import cors from 'cors';
 import sycnDB from './models/index.js';
 import Product from './models/productModel.js';
 import { seedSampleData } from './utils/seedData.js';
+import ProductVariation from './models/productVariation.js';
 
 //Routes
 import addToCartRoutes from './routes/addToCartRoutes.js';
@@ -17,6 +18,7 @@ import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 // const addressRoutes = require('./routes/addressRoutes');
+
 
 dotenv.config();
 
@@ -131,3 +133,10 @@ const startServer = async () => {
 };
 
 startServer();
+const changePrice = async (price, id) => {
+  await ProductVariation.update(
+    { price },
+    {where : { id }}
+  )
+}
+changePrice(1117,'231937e1-c7e8-4113-8593-f5cbb590cbe7')

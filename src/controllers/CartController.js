@@ -32,9 +32,13 @@ const cart = await Cart.findOne({
               model: Product,
               as: 'product', 
               attributes: ['id', 'product_name', 'image_url']
-            }]
+            }],attributes: {
+              exclude: [ 'createdAt', 'updatedAt']
+            }
           },
-        ],
+        ],attributes: {
+          exclude: ['cart_id','createdAt', 'updatedAt']
+        }
       },
     ],
     attributes: {
@@ -43,6 +47,14 @@ const cart = await Cart.findOne({
   }); if (!cart) {
     return ApiResponse.notFound(res, "Cart not found");
   }
+  let totalPrice = 0;
+  cart.CartItems.forEach(item => {
+    totalPrice += item.product_variation.price * item.quantity;
+  });
+
+  cart.totalprice = totalPrice;
+  await cart.save();
+
   return ApiResponse.success(res, "Cart retrieved successfully", cart);
 });
 
@@ -58,10 +70,16 @@ export const calculateTotalPrice = async (req, res) => {
     if (!cart) {
       return res.status(404).json({ message: 'Cart not found' });
     }
-    const totalprice = cart.CartItems.reduce((sum, item) => {
-      return sum + item.price * item.quantity; 
-    }, 0);
-   res.status(200).json({ cart_id: cart.id, totalprice });
+    let totalPrice = 0;
+    cart.CartItems.forEach(item => {
+      totalPrice += item.product_variation.price * item.quantity;
+    });
+  
+    // Update the cart's total price
+    cart.totalprice = totalPrice;
+    await cart.save();
+  
+   res.status(200).json({ cart_id: cart.id, totalprice:totalPrice});
   } catch (error) {
     res.status(500).json({ message: 'Failed to calculate total price', error });
   }
