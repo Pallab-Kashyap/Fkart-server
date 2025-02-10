@@ -1,9 +1,8 @@
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiResponse from '../utils/APIResponse.js';
 import { Cart, CartItem, Product, ProductVariation } from '../models/index.js';
-import { sequelize } from '../config/DBConfig.js'; // Assuming you have a sequelize instance
+import { sequelize } from '../config/DBConfig.js'; 
 
-// Helper function to calculate total price
 const calculateTotalPrice = (cartItems) => {
   return cartItems.reduce((total, item) => total + parseFloat(item.price) * item.quantity, 0);
 };
@@ -52,8 +51,6 @@ export const getCart = asyncWrapper(async (req, res) => {
   if (!cart) {
     return ApiResponse.notFound(res, "Cart not found");
   }
-
-  // Wrap price updates in transaction
   await sequelize.transaction(async (t) => {
     for (const item of cart.CartItems) {
       if (parseFloat(item.price) !== parseFloat(item.product_variation.price)) {
@@ -67,7 +64,6 @@ export const getCart = asyncWrapper(async (req, res) => {
   return ApiResponse.success(res, "Cart retrieved successfully", cart);
 });
 
-// Calculate Total Price
 export const calculateCartTotalPrice = asyncWrapper(async (req, res) => {
   const { cart_id } = req.params;
   const cart = await Cart.findByPk(cart_id, { include: [CartItem] });
@@ -79,7 +75,7 @@ export const calculateCartTotalPrice = asyncWrapper(async (req, res) => {
   let totalPrice = 0;
   for (const item of cart.CartItems) {
     const variation = await ProductVariation.findByPk(item.product_variation_id);
-    totalPrice += variation.price * item.quantity; // Use the current price
+    totalPrice += variation.price * item.quantity; 
   }
 
   cart.totalprice = totalPrice;
@@ -137,11 +133,10 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
         cart_id,
         product_variation_id,
         quantity,
-        price: variation.price // Store the price at the time of addition
+        price: variation.price 
       }, { transaction: t });
     }
-
-    cart.totalprice += variation.price * quantity;
+     cart.totalprice += variation.price * quantity;
     await cart.save({ transaction: t });
   });
 
