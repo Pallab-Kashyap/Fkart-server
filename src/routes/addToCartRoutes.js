@@ -1,23 +1,3 @@
-// import express from 'express';
-// import auth from '../middlewares/authMiddleware.js';
-// import {
-//   getCart,
-//   addItemToCart,
-//   updateCartItem,
-//   removeItemFromCart,
-//   clearCart,
-// } from '../controllers/CartController.js';
-
-// const router = express.Router();
-
-// router.get('/cart', getCart); // Get the cart
-// router.post('/cart/items', addItemToCart); // Add item to cart
-// router.put('/cart/items/:id', updateCartItem); // Update cart item
-// router.delete('/cart/items/:id', removeItemFromCart); // Remove item from cart
-// router.delete('/cart', clearCart); // Clear the entire cart
-
-// export default router;
-
 import express from 'express';
 const router = express.Router();
 
@@ -29,7 +9,7 @@ import {
   updateCartItem,
   deleteCartItem,
   clearCart,
-  calculateTotalPrice, 
+  calculateCartTotalPrice,
 } from '../controllers/CartController.js'; 
 import auth from '../middlewares/authMiddleware.js';
 
@@ -37,6 +17,7 @@ import auth from '../middlewares/authMiddleware.js';
 router.post('/', auth, createCart); 
 router.get('/', auth, getCart); 
 router.delete('/:id', auth, deleteCart); 
+router.get('/:cart_id/totalprice', auth, calculateCartTotalPrice);
 
 // CART ITEM ROUTES
 router.post('/item', auth, addItemToCart); 
@@ -45,5 +26,5 @@ router.delete('/item/:id', auth, deleteCartItem);
 
 // ADDITIONAL ROUTES
 router.delete('/:cart_id/items', auth, clearCart); // 
-router.get('/:cart_id/totalprice', auth, calculateTotalPrice); 
+ 
 export default router;

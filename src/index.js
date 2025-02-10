@@ -133,10 +133,10 @@ const startServer = async () => {
 };
 
 startServer();
-const changePrice = async (price, id) => {
-  await ProductVariation.update(
-    { price },
-    {where : { id }}
-  )
-}
-changePrice(1117,'231937e1-c7e8-4113-8593-f5cbb590cbe7')
+// const changePrice = async (price, id) => {
+//   await ProductVariation.update(
+//     { price },
+//     {where : { id }}
+//   )
+// }
+// changePrice(1556,'231937e1-c7e8-4113-8593-f5cbb590cbe7')
