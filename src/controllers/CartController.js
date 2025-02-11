@@ -35,14 +35,14 @@ export const getCart = asyncWrapper(async (req, res) => {
           {
             model: ProductVariation,
             as: 'product_variation',
-            attributes: ['id', 'product_id', 'size', 'color', 'price', 'stock_quantity', 'in_stock', 'image_url'],
+            attributes: ['id','size', 'color', 'price', 'in_stock' ],
             include: [{
               model: Product,
               as: 'product',
               attributes: ['id', 'product_name', 'image_url']
             }],
-          },
-        ],
+          }, 
+        ],attributes:{ exclude: [ "cart_id",'createdAt', 'updatedAt'] }
       },
     ],
     attributes: { exclude: ['user_id', 'createdAt', 'updatedAt'] }
@@ -61,9 +61,19 @@ export const getCart = asyncWrapper(async (req, res) => {
     await cart.save({ transaction: t });
   });
 
-  return ApiResponse.success(res, "Cart retrieved successfully", cart);
+  // Convert cart data to plain object and calculate item totals
+  const cartData = cart.get({ plain: true });
+  cartData.CartItems = cartData.CartItems.map(item => ({
+    ...item,
+    price: parseFloat(item.price) * item.quantity // Multiply price by quantity
+  }));
+
+  return ApiResponse.success(res, "Cart retrieved successfully", cartData);
 });
 
+
+
+// Calculate total price of cart
 export const calculateCartTotalPrice = asyncWrapper(async (req, res) => {
   const { cart_id } = req.params;
   const cart = await Cart.findByPk(cart_id, { include: [CartItem] });
