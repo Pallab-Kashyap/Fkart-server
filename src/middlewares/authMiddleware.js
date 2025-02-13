@@ -3,7 +3,7 @@ import asyncWrapper from '../utils/asyncWrapper.js';
 import { verifyToken } from '../utils/generateToken.js';
 
 const auth = asyncWrapper(async (req, res, next) => {
-  console.log(req.header('Authorization'));
+
   let token = req.header('Authorization');
   if (!token || !token.startsWith('Bearer')) {
     throw ApiError.unauthorized('Unauthorized, token is missing or not Bearer token');

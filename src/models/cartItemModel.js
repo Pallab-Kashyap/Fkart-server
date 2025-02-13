@@ -1,7 +1,7 @@
 
 import { DataTypes } from "sequelize";
 import { sequelize } from '../config/DBConfig.js';
-import Cart from './cartModel.js';
+
 const CartItem = sequelize.define('CartItem', {
     id: {
         type: DataTypes.UUID, 
@@ -16,9 +16,10 @@ const CartItem = sequelize.define('CartItem', {
             key: 'id',
         },
     },
-    product_variation_id: { 
+
+    product_variation_id: {
         type: DataTypes.UUID,
-        allowNull: false,
+        allowNull: true,
         references: {
             model: 'product_variations',
             key: 'id',

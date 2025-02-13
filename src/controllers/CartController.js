@@ -225,3 +225,4 @@ export const clearCart = asyncWrapper(async (req, res) => {
 
   return ApiResponse.success(res, "Cart cleared successfully");
 });
+

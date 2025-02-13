@@ -1,4 +1,4 @@
-import { DataTypes, UUID, UUIDV4 } from 'sequelize';
+import { DataTypes,  UUIDV4 } from 'sequelize';
 import {sequelize} from '../config/DBConfig.js';
 import { ORDER_STATUS, PAYMENT_METHOD } from '../constants.js';
 
@@ -52,7 +52,7 @@ const Order = sequelize.define(
     },
     Order_date: {
       type: DataTypes.STRING,
-      allowNull: false
+      // defaultValue: DataTypes.NOW,
     },
     total_item: {
       type: DataTypes.INTEGER,

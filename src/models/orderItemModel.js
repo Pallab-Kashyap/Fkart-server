@@ -42,7 +42,7 @@ const OrderItem = sequelize.define(
     },
     selling_price: {
       type: DataTypes.DECIMAL,
-      allowNull: false
+      allowNull: null
     },
     total_Price: {
       type: DataTypes.DECIMAL,

@@ -13,7 +13,7 @@ import CartItem from './cartItemModel.js';
 import SquareData from './squareDataModel.js';
 import ProductVariation from './productVariation.js';
 import Category from './categoryModel.js';
-// import Category from './categoryModel.js';
+import Refund from './refundModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -63,6 +63,9 @@ CartItem.belongsTo(ProductVariation, {
   Category.hasMany(Category, { foreignKey: 'parent_id', as: 'subcategories' });
   Category.belongsTo(Category, { foreignKey: 'parent_id', as: 'parentCategory' });
 
+  // CART
+  Cart.belongsTo(ProductVariation, { foreignKey: 'variation_id' });
+
   // ORDER
   Order.belongsTo(Address, { foreignKey: 'order_address_id' });
   Order.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
@@ -82,10 +85,17 @@ CartItem.belongsTo(ProductVariation, {
     onDelete: 'CASCADE'
   });
 
+
   // PAYMENT
   Payment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
   Payment.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   
+
+  // PAYMENT & REFUND
+  Payment.hasOne(Refund, { foreignKey: 'payment_id', onDelete: 'CASCADE' });
+  Refund.belongsTo(Payment, { foreignKey: 'payment_id' });
+
+
   // SHIPMENT
   Shipment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
 
@@ -105,9 +115,8 @@ CartItem.belongsTo(ProductVariation, {
     // await CartItem.sync();
     // await OTPVerification.sync();
     // await Order.sync();
-    // await OrderItem.sync();
     // await Payment.sync();
-    await sequelize.sync({});
+    await sequelize.sync({ alter: true });
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {
@@ -133,4 +142,5 @@ export {
   OTPVerification,
   SquareData,
   Category,
+  Refund,
 };

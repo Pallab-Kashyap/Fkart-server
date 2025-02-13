@@ -1365,6 +1365,21 @@
             }
         ]
     }
-}
+},
 
+"address":{
+    "data": {
+        "totalprice": 1000,
+        "items": [
+            { 
+                "prdtID": "LA5QIMJKQ3A2VKU2BM4H3EAE",
+                "qty": 12,
+                "variation": {
+                    "complete_data": "data",
+                    "except": "user" 
+                }
+            }
+        ]
+    }
+}
 }

@@ -1,13 +1,15 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { connectDB } from './config/DBConfig.js';
 import errorHandler from './middlewares/errorHandler.js';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import sycnDB from './models/index.js';
+import sycnDB, { ProductVariation } from './models/index.js';
 import Product from './models/productModel.js';
 import { seedSampleData } from './utils/seedData.js';
-import ProductVariation from './models/productVariation.js';
+
 
 //Routes
 import addToCartRoutes from './routes/addToCartRoutes.js';
@@ -16,14 +18,17 @@ import addressRoute from './routes/addressRoutes.js';
 import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
+import orderRoute from './routes/orderRoutes.js'
 import { fetchSquareCatalogList } from './controllers/squareController.js';
-import orderRoute from './routes/orderRoutes.js';
+import Razorpay from 'razorpay';
 // const addressRoutes = require('./routes/addressRoutes');
 
 
 dotenv.config();
 
-
+// Get directory name in ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -112,8 +117,54 @@ app.use('/api/v1/orders', orderRoute);
 // update
 // remove
 
-app.post('/web', (req, res) => {
-  res.send('Web is up and running', req.query, req.params, req.body);
+let instance = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+app.post('/create-order', async (req, res) => {
+  const { amount, currency = 'INR', receipt = 'order_rcptid_11' } = req.body;
+
+  try {
+    const response = await instance.orders.create({
+      amount: parseInt(amount), 
+      currency,
+      receipt
+    });
+    console.log(response);
+    res.json({
+      id: response.id,
+      currency: response.currency,
+      amount: response.amount,
+      key: process.env.RAZORPAY_KEY_ID
+    });
+  } catch (error) {
+    console.error('Razorpay Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+import crypto from 'crypto'
+
+app.post('/verify-payment', async (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+  
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+  
+  const expectedSignature = crypto
+    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+    .update(body.toString())
+    .digest('hex');
+
+  if (expectedSignature === razorpay_signature) {
+    res.json({ success: true, message: 'Payment verified successfully' });
+  } else {
+    res.status(400).json({ success: false, message: 'Invalid signature' });
+  }
+});
+
+app.get('/razor-ui', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/razorpay.html'));
 });
 
 app.use(errorHandler);
@@ -141,4 +192,4 @@ startServer();
 //     {where : { id }}
 //   )
 // }
-// changePrice(1500,'231937e1-c7e8-4113-8593-f5cbb590cbe7')
+// changePrice(1556,'231937e1-c7e8-4113-8593-f5cbb590cbe7')
