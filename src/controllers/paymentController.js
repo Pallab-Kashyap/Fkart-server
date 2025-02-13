@@ -4,7 +4,7 @@ import crypto from 'crypto'
 import config from '../config/config'
 import ApiError from '../utils/APIError';
 import asyncWrapper from '../utils/asyncWrapper';
-import ApiResponse from '../utils/ApiResponse';
+import ApiResponse from '../utils/APIResponse';
 import { Order } from '../models';
 
 const checkOut = asyncWrapper (  async (req, res) => {

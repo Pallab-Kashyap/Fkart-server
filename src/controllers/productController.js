@@ -2,7 +2,7 @@
 import { Category, Product, ProductVariation } from "../models/index.js";
 import { Op } from "sequelize";
 import ApiError from "../utils/APIError.js";
-import ApiResponse from "../utils/ApiResponse.js";
+import ApiResponse from "../utils/APIResponse.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
 import { fetchSquareCatalogList } from "./squareController.js";
 import { sequelize } from "../config/DBConfig.js";

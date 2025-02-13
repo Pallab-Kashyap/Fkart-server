@@ -11,7 +11,7 @@ import {
   User,
 } from '../models/index.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
-import ApiResponse from '../utils/ApiResponse.js';
+import ApiResponse from '../utils/APIResponse.js';
 import { sequelize } from '../config/DBConfig.js';
 import { ORDER_STATUS, PAYMENT_METHOD } from '../constants.js';
 import ApiError from '../utils/APIError.js';
