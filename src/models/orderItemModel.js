@@ -8,7 +8,7 @@ const OrderItem = sequelize.define(
       type: DataTypes.UUID,
       primaryKey: true,
     },
-    order_id: {
+    order_id: {  
       type: DataTypes.UUID,
       allowNull: false,
       references: {
@@ -24,6 +24,14 @@ const OrderItem = sequelize.define(
         key: 'id'
       }
     },
+    product_variation_id: {  
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'product_variations',
+        key: 'id'
+      }
+    },
     sku: {
       type: DataTypes.JSON,
       allowNull: false,
@@ -32,7 +40,7 @@ const OrderItem = sequelize.define(
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    celling_price: {
+    selling_price: {
       type: DataTypes.DECIMAL,
       allowNull: false
     },
@@ -45,7 +53,5 @@ const OrderItem = sequelize.define(
     timestamps: true,
   }
 );
-
-
 
 export default OrderItem;

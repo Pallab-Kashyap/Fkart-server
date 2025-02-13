@@ -17,6 +17,7 @@ import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
+import orderRoute from './routes/orderRoutes.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
 
@@ -76,6 +77,7 @@ app.use('/s', async (req, res) => {
 })
 
 // ORDER
+app.use('/api/v1/orders', orderRoute);
 // create
 // fetch
 // update
@@ -139,4 +141,4 @@ startServer();
 //     {where : { id }}
 //   )
 // }
-// changePrice(1556,'231937e1-c7e8-4113-8593-f5cbb590cbe7')
+// changePrice(1500,'231937e1-c7e8-4113-8593-f5cbb590cbe7')

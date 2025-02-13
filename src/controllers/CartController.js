@@ -1,5 +1,5 @@
 import asyncWrapper from '../utils/asyncWrapper.js';
-import ApiResponse from '../utils/APIResponse.js';
+import ApiResponse from '../utils/ApiResponse.js';
 import { Cart, CartItem, Product, ProductVariation } from '../models/index.js';
 import { sequelize } from '../config/DBConfig.js'; 
 

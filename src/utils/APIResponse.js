@@ -16,6 +16,13 @@ class ApiResponse {
             new ApiResponse(message, data)
         );
     }
+    static badRequest(response, message = "Bad Request", data = null) {
+        return response.status(400).json({
+            status: false,
+            message: message,
+            data: data
+        });
+    }
 }
 
 export default ApiResponse;
