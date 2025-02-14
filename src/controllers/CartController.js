@@ -2,7 +2,7 @@ import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiResponse from '../utils/APIResponse.js';
 import { Cart, CartItem, Product, ProductVariation } from '../models/index.js';
 import { sequelize } from '../config/DBConfig.js'; 
-
+import ApiError from '../utils/APIError.js';
 const calculateTotalPrice = (cartItems) => {
   return cartItems.reduce((total, item) => total + parseFloat(item.price) * item.quantity, 0);
 };
@@ -109,8 +109,9 @@ export const deleteCart = asyncWrapper(async (req, res) => {
  
 // Add Item to Cart
 export const addItemToCart = asyncWrapper(async (req, res) => {
-  const { cart_id, product_variation_id, quantity } = req.body;
-  const cart = await Cart.findByPk(cart_id);
+  const {  product_variation_id, quantity } = req.body;
+ const userId = req.userId;
+ const cart = await Cart.findOne({ where: { user_id: userId } });
 
  if (!cart) {
     return ApiResponse.notFound(res, "Cart not found");
@@ -128,7 +129,7 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
     return ApiResponse.badRequest(res, "Insufficient stock");
   }
 
-  const existingItem = await CartItem.findOne({ where: { cart_id, product_variation_id } });
+  const existingItem = await CartItem.findOne({ where: { cart_id: cart.id, product_variation_id } });
 
   await sequelize.transaction(async (t) => {
     if (existingItem) {
@@ -140,7 +141,7 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
       await existingItem.save({ transaction: t });
     } else {
       await CartItem.create({
-        cart_id,
+        cart_id: cart.id,
         product_variation_id,
         quantity,
         price: variation.price 
@@ -157,14 +158,17 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
 export const updateCartItem = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const { quantity } = req.body;
-
+  const userId = req.userId;
   const cartItem = await CartItem.findByPk(id, {
     attributes: { exclude: ["createdAt", "updatedAt"] },
-    include: [{ model: ProductVariation, as: "product_variation", attributes: { exclude: ["createdAt", "updatedAt"] } }]
+    include: [
+      { model: ProductVariation, as: "product_variation", attributes: { exclude: ["createdAt", "updatedAt"] } },
+      { model: Cart, where: { user_id: userId } }
+    ]
   });
 
   if (!cartItem) {
-    return ApiResponse.notFound(res, "CartItem not found");
+    throw ApiResponse.notFound("CartItem not found");
   }
 
   if (quantity > cartItem.product_variation.stock_quantity) {

@@ -24,11 +24,11 @@ const getOrderDetails = async (orderId) => {
         model: Address,
         attributes: ['id', 'country', 'address', 'city', 'state', 'pincode'],
       },
-      { model: Shipment },
-      {
-        model: Payment,
-        attributes: ['payment_method', 'amount', 'payment_status'],
-      },
+      // { model: Shipment },
+      // {
+      //   model: Payment,
+      //   attributes: ['payment_method', 'amount', 'payment_status'],
+      // },
     ],
     attributes: [
       'id',
@@ -47,6 +47,7 @@ export const createOrder = asyncWrapper(async (req, res) => {
     body: { address_id, payment_method },
   } = req;
 
+  const validPaymentMethod = payment_method.toLowerCase();
   const cart = await Cart.findOne({
     where: { user_id: userId },
     include: [
@@ -63,8 +64,8 @@ export const createOrder = asyncWrapper(async (req, res) => {
     ],
   });
 
-  if (!cart || cart.CartItems.length === 0) {
-    return ApiResponse.badRequest(res, 'Cart is empty');
+  if (!cart || !cart.CartItems || cart.CartItems.length === 0) {
+    throw ApiError.badRequest("Cart is empty");
   }
   const result = await sequelize.transaction(async (t) => {
     const orderItems = [];
