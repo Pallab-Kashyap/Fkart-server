@@ -152,7 +152,7 @@ export const createOrderFromProduct = asyncWrapper(async (req, res) => {
     userId,
     body: { address_id, payment_method, product_variation_id, quantity },
   } = req;
-
+  const validPaymentMethod = payment_method.toLowerCase();
   const result = await sequelize.transaction(async (t) => {
     const variation = await ProductVariation.findOne({
       where: { id: product_variation_id },
@@ -206,7 +206,7 @@ export const createOrderFromProduct = asyncWrapper(async (req, res) => {
       {
         user_id: userId,
         order_id: order.id,
-        amount: totalPrice,
+        // amount: totalPrice,
         payment_method: payment_method,
         payment_status: 'pending',
         currency: 'INR',
