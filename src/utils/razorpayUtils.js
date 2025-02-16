@@ -1,7 +1,7 @@
 import Razorpay from 'razorpay';
-import crypto from 'crypto-js' 
-import config from '../config/razorpayConfig'
-import ApiError from './APIError';
+import crypto from 'crypto' 
+import config from '../config/razorpayConfig.js'
+
 
 const razorpayInstance = new Razorpay({
     key_id: config.razorpay.key_id,
@@ -11,20 +11,6 @@ const razorpayInstance = new Razorpay({
 const verifyWebhookSignature = (requestBody, signature) => {
     const expectedSignature = crypto.HmacSHA256(requestBody, config.razorpay.webhook_secret).toString();
     return expectedSignature === signature;
-};
-
-const createRazorpayOrder = async (amount, currency, receipt) => {
-    try {
-        const order = await razorpayInstance.orders.create({
-            amount, 
-            currency,
-            receipt
-        });
-        return order;
-    } catch (error) {
-        console.error("Error creating Razorpay order:", error);
-        throw ApiError.internal(`Error creating Razorpay order: ${error}`)
-    }
 };
 
 const refundPayment = async (paymentId, amount, reason = 'Delayed Payment - Fast Refund') => {
@@ -41,9 +27,8 @@ const refundPayment = async (paymentId, amount, reason = 'Delayed Payment - Fast
 };
 
 
-module.exports = {
+export {
     razorpayInstance,
     verifyWebhookSignature,
-    createRazorpayOrder,
     refundPayment,
 };

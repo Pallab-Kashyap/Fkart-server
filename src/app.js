@@ -163,6 +163,15 @@ app.post('/verify-payment', async (req, res) => {
   }
 });
 
+
+app.post('/razorpay-webhook', async (req, res) => {
+  const { body } = req;
+  // console.log('Razorpay Webhook:', body);
+  const paymentPayload = body.payload
+  console.log(paymentPayload);
+  res.json({ success: true });
+})
+
 app.get('/razor-ui', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/razorpay.html'));
 });
@@ -173,8 +182,8 @@ const port = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
-    await connectDB();
-    await sycnDB();
+    // await connectDB();
+    // await sycnDB();
     // await seedSampleData()
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

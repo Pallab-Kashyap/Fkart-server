@@ -13,8 +13,182 @@ import {
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiResponse from '../utils/APIResponse.js';
 import { sequelize } from '../config/DBConfig.js';
-import { ORDER_STATUS, PAYMENT_METHOD } from '../constants.js';
+import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from '../constants.js';
 import ApiError from '../utils/APIError.js';
+import { createRazorpayOrder } from './payment/razorpayPaymentController.js';
+
+
+// Helper functions-------------------->>>>>>>>>>>>
+
+
+const createOrderItems = async (items, transaction) => { 
+
+
+  const orderItemsData = []; 
+  let totalItems = 0;
+  let totalPrice = 0;
+  const variationIdsToUpdate = []; 
+
+  const variationIds = items.map(item => item.product_variation_id);
+  let variations;
+try {
+     variations = await ProductVariation.findAll({
+        where: { id: variationIds },
+        include: [
+          { model: Product, 
+            as: 'product',
+            attributes: ['id', 'product_name']
+          }
+        ],
+    },{transaction });
+} catch (error) {
+    await transaction.rollback(); 
+    throw new Error(`Error fetching product variations: ${error.message}`);
+}
+
+  const variationMap = new Map(variations.map(v => [v.id, v])); 
+
+
+  for (const item of items) { 
+      const variation = variationMap.get(item.product_variation_id); 
+
+      if (!variation || variation.stock_quantity < item.quantity) {
+          const productName = variation ? variation.product.product_name : `Product Variation ID ${item.product_variation_id}`; 
+          throw new Error(
+              `${productName} is out of stock or insufficient quantity available` 
+          );
+      }
+
+      const totalItemPrice = variation.price * item.quantity;
+      orderItemsData.push({ 
+          id: crypto.randomUUID(),
+          product_id: variation.product.id,
+          product_variation_id: item.product_variation_id,
+          quantity: item.quantity,
+          selling_price: variation.price,
+          total_Price: totalItemPrice,
+          sku: { size: variation.size, color: variation.color },
+          order_id: null, 
+      });
+      totalItems += item.quantity;
+      totalPrice += totalItemPrice;
+
+      variationIdsToUpdate.push({  
+          id: item.product_variation_id,
+          quantityToDecrement: item.quantity
+      });
+  }
+
+
+  return { orderItemsData, totalItems, totalPrice, variationIdsToUpdate }; 
+};
+
+const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => { 
+const { paymentMethod, addressId } = orderDetails;
+  try {
+      const { orderItemsData, totalItems, totalPrice, variationIdsToUpdate } = await createOrderItems(cartItems, transaction); 
+
+
+      const order = await Order.create({
+          user_id: userInfo.userId, 
+          total_amount: totalPrice,
+          payment_method: paymentMethod,
+          order_status: PAYMENT_STATUS.PENDING, 
+          order_address_id: addressId,
+          total_item: totalItems,
+      }, { transaction });
+
+
+      const orderItemsWithOrderId = orderItemsData.map(itemData => ({
+          ...itemData,
+          order_id: order.id,
+      }));
+      await OrderItem.bulkCreate(orderItemsWithOrderId, { transaction });
+
+
+      if (paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) {
+          await bulkDecrementStock(variationIdsToUpdate, transaction); 
+          return { data: null }
+      } 
+      else{
+        const razorpayOrder = await createRazorpayOrder(totalPrice, 'INR', `recptid_${order.id}`)
+        await Payment.upsert({
+          user_id: userInfo.userId,
+          order_id: order.id,
+          payment_method: PAYMENT_METHOD.RAZORPAY,
+          payment_status: PAYMENT_STATUS.PENDING,
+          payment_gateway: 'razorpay',
+          amount: totalPrice,
+          currency: 'INR',
+          razorpay_order_id: razorpayOrder.id,
+        },
+        { transaction: transaction }
+        );
+        return { data: razorpayOrder }
+      }
+
+  } catch (error) {
+      await transaction.rollback(); 
+      console.error("Error placing order:", error);
+      throw error; 
+  }
+}
+
+
+export const bulkDecrementStock = async (variationUpdates, transaction) => {  
+  if (!variationUpdates || variationUpdates.length === 0) {
+      return; 
+  }
+
+  const updatePromises = variationUpdates.map(update => {
+      return ProductVariation.decrement('stock_quantity', {
+          by: update.quantityToDecrement,
+          where: { id: update.id },
+          transaction: transaction
+      });
+  });
+  await Promise.all(updatePromises);
+}
+
+// Helper functions<<<<<<<<<<<<<<<----------------------
+
+
+export const cartCheckout = asyncWrapper(async (req, res) => { 
+  const { userId, body: { addressId, paymentMethod } } = req;
+
+  if((!(paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) || (paymentMethod.toLowerCase() === PAYMENT_METHOD.RAZORPAY))) { 
+    throw ApiError.badRequest(`paymaent method must of one of: ${ PAYMENT_METHOD.COD} or ${PAYMENT_METHOD.RAZORPAY}`)
+  }
+
+  if(!addressId){
+    throw ApiError.badRequest('addressId is a required field')
+  }
+
+
+  let cart = await Cart.findOne({
+    where: { user_id: userId },
+    include: [
+      {
+        model: CartItem,
+      },
+    ],
+  });
+
+  if (!cart || !cart.CartItems || cart.CartItems.length === 0) {
+    throw ApiError.badRequest("Cart is empty");
+  }
+
+  const transaction = await sequelize.transaction();
+   const data = await placeOrder(cart.cartItems, {paymentMethod, addressId}, { userId }, transaction)
+
+   await transaction.commit();
+
+   return ApiResponse.created(res, 'Order created successfully', data)
+
+});
+
+
+
 
 const getOrderDetails = async (orderId) => {
   return Order.findOne({
@@ -57,7 +231,6 @@ export const createOrder = asyncWrapper(async (req, res) => {
           {
             model: ProductVariation,
             as: 'product_variation',
-            include: [{ model: Product, as: 'product' }],
           },
         ],
       },

@@ -50,16 +50,12 @@ const Order = sequelize.define(
         },
       },
     },
-    Order_date: {
-      type: DataTypes.STRING,
-      // defaultValue: DataTypes.NOW,
-    },
     total_item: {
       type: DataTypes.INTEGER,
       allowNull: false
     },
-    total_price: {
-      type: DataTypes.DECIMAL,
+    total_amount: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
     payment_Method: {

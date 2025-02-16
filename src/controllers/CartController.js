@@ -35,7 +35,7 @@ export const getCart = asyncWrapper(async (req, res) => {
           {
             model: ProductVariation,
             as: 'product_variation',
-            attributes: ['id','size', 'color', 'price', 'in_stock' ],
+            attributes: ['id','size', 'color', 'price', 'stock_quantity' ],
             include: [{
               model: Product,
               as: 'product',
@@ -51,26 +51,27 @@ export const getCart = asyncWrapper(async (req, res) => {
   if (!cart) {
     return ApiResponse.notFound(res, "Cart not found");
   }
-  await sequelize.transaction(async (t) => {
-    for (const item of cart.CartItems) {
-      if (parseFloat(item.price) !== parseFloat(item.product_variation.price)) {
-        await item.update({ price: item.product_variation.price }, { transaction: t });
-      }
-    }
-    cart.totalprice = calculateTotalPrice(cart.CartItems);
-    await cart.save({ transaction: t });
-  });
+ 
+  const updatedCartItems = [];
+  let totalPrice = 0;
+  for(const item of cart.CartItems){
+    const productVariationPrice = parseFloat(item.product_variation.price);
+    const calculatedAmount = productVariationPrice * item.quantity;
+    const hasSufficientStock = item.product_variation.stock_quantity >= item.quantity;
+    totalPrice += calculatedAmount;
 
-  // Convert cart data to plain object and calculate item totals
-  const cartData = cart.get({ plain: true });
-  cartData.CartItems = cartData.CartItems.map(item => ({
-    ...item,
-    price: parseFloat(item.price) * item.quantity // Multiply price by quantity
-  }));
+    updatedCartItems.push({
+      ...item.get(), 
+      amount: calculatedAmount,
+      hasSufficientStock: hasSufficientStock,
+      product_variation: item.product_variation.get(), 
+      product: item.product_variation.product.get() 
+    });
+  }
+  cart.totalprice = totalPrice;
 
-  return ApiResponse.success(res, "Cart retrieved successfully", cartData);
+  return ApiResponse.success(res, "Cart retrieved successfully", { ...cart.get(), CartItems: updatedCartItems });
 });
-
 
 
 // Calculate total price of cart
@@ -111,10 +112,10 @@ export const deleteCart = asyncWrapper(async (req, res) => {
 export const addItemToCart = asyncWrapper(async (req, res) => {
   const {  product_variation_id, quantity } = req.body;
  const userId = req.userId;
- const cart = await Cart.findOne({ where: { user_id: userId } });
+ let cart = await Cart.findOne({ where: { user_id: userId } });
 
  if (!cart) {
-    return ApiResponse.notFound(res, "Cart not found");
+  cart = await Cart.create({ user_id: userId, totalprice: 0 });
   }
 
   const variation = await ProductVariation.findByPk(product_variation_id, {
@@ -135,7 +136,7 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
     if (existingItem) {
       const newTotalQuantity = existingItem.quantity + quantity;
       if (variation.stock_quantity < newTotalQuantity) {
-        throw new Error("Exceeds available stock");
+        throw ApiError.badRequest("Exceeds available stock");
       }
       existingItem.quantity = newTotalQuantity;
       await existingItem.save({ transaction: t });

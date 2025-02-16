@@ -20,10 +20,6 @@ const Cart = sequelize.define('Cart', {
             key: 'id',
         },
     }, 
-    totalprice: {
-        type: DataTypes.FLOAT,
-        defaultValue: 0.0,
-    },
     status: {
         type: DataTypes.ENUM('active', 'checkedout'),
         defaultValue: 'active',
