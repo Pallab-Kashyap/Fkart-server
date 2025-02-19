@@ -19,6 +19,7 @@ import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
 import orderRoute from './routes/orderRoutes.js'
+import paymentRoute from './routes/paymentRoutes.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 import Razorpay from 'razorpay';
 // const addressRoutes = require('./routes/addressRoutes');
@@ -89,6 +90,7 @@ app.use('/api/v1/orders', orderRoute);
 // remove
 
 // PAYMENT
+app.use('/api/v1/payments', paymentRoute);
 // initiate
 // verify
 // store
@@ -182,8 +184,8 @@ const port = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
-    // await connectDB();
-    // await sycnDB();
+    await connectDB();
+    await sycnDB();
     // await seedSampleData()
     app.listen(port, () => {
       console.log(`Server running on port ${port}`);

@@ -23,14 +23,16 @@ import { createRazorpayOrder } from './payment/razorpayPaymentController.js';
 
 const createOrderItems = async (items, transaction) => { 
 
-
+console.log('IN CREATE ORDER ITEMS');
   const orderItemsData = []; 
   let totalItems = 0;
   let totalPrice = 0;
   const variationIdsToUpdate = []; 
+  console.log('MAPING VARIAITONS');
 
   const variationIds = items.map(item => item.product_variation_id);
   let variations;
+  console.log('FINDING VARIAITONS');
 try {
      variations = await ProductVariation.findAll({
         where: { id: variationIds },
@@ -45,10 +47,10 @@ try {
     await transaction.rollback(); 
     throw new Error(`Error fetching product variations: ${error.message}`);
 }
-
+console.log('CREATING VARIATION MAP');
   const variationMap = new Map(variations.map(v => [v.id, v])); 
 
-
+console.log('ITERATING ITEMS');
   for (const item of items) { 
       const variation = variationMap.get(item.product_variation_id); 
 
@@ -85,32 +87,35 @@ try {
 
 const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => { 
 const { paymentMethod, addressId } = orderDetails;
+console.log('IN PLACE ORDER');
   try {
       const { orderItemsData, totalItems, totalPrice, variationIdsToUpdate } = await createOrderItems(cartItems, transaction); 
 
-
+console.log('CREATING ORDER');
+console.log(paymentMethod);
       const order = await Order.create({
           user_id: userInfo.userId, 
           total_amount: totalPrice,
-          payment_method: paymentMethod,
+          payment_method: paymentMethod.toLowerCase(),
           order_status: PAYMENT_STATUS.PENDING, 
           order_address_id: addressId,
           total_item: totalItems,
       }, { transaction });
 
-
+console.log('CREATING ORDER ITEMS');
       const orderItemsWithOrderId = orderItemsData.map(itemData => ({
           ...itemData,
           order_id: order.id,
       }));
       await OrderItem.bulkCreate(orderItemsWithOrderId, { transaction });
 
-
       if (paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) {
+        console.log('UPDATING VARIATIONS ON COD');
           await bulkDecrementStock(variationIdsToUpdate, transaction); 
           return { data: null }
       } 
       else{
+        console.log('CREATING RAZORPAY ORDER');
         const razorpayOrder = await createRazorpayOrder(totalPrice, 'INR', `recptid_${order.id}`)
         await Payment.upsert({
           user_id: userInfo.userId,
@@ -156,7 +161,7 @@ export const bulkDecrementStock = async (variationUpdates, transaction) => {
 export const cartCheckout = asyncWrapper(async (req, res) => { 
   const { userId, body: { addressId, paymentMethod } } = req;
 
-  if((!(paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) || (paymentMethod.toLowerCase() === PAYMENT_METHOD.RAZORPAY))) { 
+  if(!((paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) || (paymentMethod.toLowerCase() === PAYMENT_METHOD.RAZORPAY))) { 
     throw ApiError.badRequest(`paymaent method must of one of: ${ PAYMENT_METHOD.COD} or ${PAYMENT_METHOD.RAZORPAY}`)
   }
 
@@ -179,7 +184,7 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
   }
 
   const transaction = await sequelize.transaction();
-   const data = await placeOrder(cart.cartItems, {paymentMethod, addressId}, { userId }, transaction)
+   const data = await placeOrder(cart.CartItems, {paymentMethod, addressId}, { userId }, transaction)
 
    await transaction.commit();
 

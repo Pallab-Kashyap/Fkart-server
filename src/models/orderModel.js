@@ -58,7 +58,7 @@ const Order = sequelize.define(
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false
     },
-    payment_Method: {
+    payment_method: {
       type: DataTypes.ENUM,
       values: Object.values(PAYMENT_METHOD),
       allowNull: false,

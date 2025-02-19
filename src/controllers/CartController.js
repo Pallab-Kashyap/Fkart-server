@@ -68,11 +68,17 @@ export const getCart = asyncWrapper(async (req, res) => {
       product: item.product_variation.product.get() 
     });
   }
-  cart.totalprice = totalPrice;
+  
+  const responseData = {
+    id: cart.id,
+    status: cart.status,
+    variation_id: cart.variation_id,
+    CartItems: updatedCartItems,
+    totalAmount: totalPrice
+  };
 
-  return ApiResponse.success(res, "Cart retrieved successfully", { ...cart.get(), CartItems: updatedCartItems });
+  return ApiResponse.success(res, "Cart retrieved successfully", responseData);
 });
-
 
 // Calculate total price of cart
 export const calculateCartTotalPrice = asyncWrapper(async (req, res) => {

@@ -116,7 +116,7 @@ CartItem.belongsTo(ProductVariation, {
     // await OTPVerification.sync();
     // await Order.sync();
     // await Payment.sync();
-    await sequelize.sync({ alter: true});
+    await sequelize.sync({alter: true});
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {
