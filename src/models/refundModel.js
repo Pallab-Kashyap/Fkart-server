@@ -28,6 +28,10 @@ const Refund = sequelize.define(
       allowNull: false,
       onDelete: 'CASCADE',
     },
+    razorpay_refund_id: {
+      type: DataTypes.STRING(255),
+      unique: true,
+    },
     refund_amount: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: false,

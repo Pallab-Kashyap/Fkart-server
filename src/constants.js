@@ -4,12 +4,11 @@ const ORDER_STATUS = Object.freeze({
     SHIPPED: 'shipped',
     DELIVERED: 'delivered',
     CANCELLED: 'cancelled',
-    REFUNDED: 'refunded',
     FAILED: 'failed'
 });
 
 const PAYMENT_METHOD = Object.freeze({
-    PREPAID: 'razorpay',
+    RAZORPAY: 'razorpay',
     COD: 'cod'
 });
 
@@ -18,6 +17,7 @@ const PAYMENT_STATUS = Object.freeze({
     PROCESSING: 'processing',
     SUCCESSFUL: 'successful',
     FAILED: 'failed',
+    REFUND_PROCESSED: 'refund_processed',
     REFUNDED: 'refunded'
 });
 

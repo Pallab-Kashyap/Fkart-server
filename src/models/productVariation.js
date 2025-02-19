@@ -74,25 +74,5 @@ ProductVariation.addHook('beforeSave', async (variation) => {
   variation.set('in_stock', stockQty > 0);
 });
 
-// Hook to update CartItem prices when ProductVariation price changes
-ProductVariation.addHook('afterUpdate', async (variation, options) => {
-  if (variation.changed('price')) {
-    try {
-      console.log(`Updating prices for variation ${variation.id} to ${variation.price}`);
-      await CartItem.update(
-        { price: variation.price },
-        { 
-          where: { product_variation_id: variation.id },
-          individualHooks: true
-        }
-      );
-    } catch (error) {
-      console.error('Error updating CartItem prices:', error);
-    }
-  }
-});
-const calculateTotalPrice = (cartItems) => {
-  return cartItems.reduce((total, item) => total + parseFloat(item.price) * item.quantity, 0);
-};
 
 export default ProductVariation;

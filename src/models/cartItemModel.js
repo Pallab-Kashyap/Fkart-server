@@ -29,10 +29,6 @@ const CartItem = sequelize.define('CartItem', {
         type: DataTypes.INTEGER,
         defaultValue: 1, 
     },
-    price: {
-        type: DataTypes.FLOAT,
-        allowNull: false,
-    },
 }, {
     tableName: 'cart_items', 
 });

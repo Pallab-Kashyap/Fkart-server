@@ -19,6 +19,7 @@ import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
 import orderRoute from './routes/orderRoutes.js'
+import paymentRoute from './routes/paymentRoutes.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 import Razorpay from 'razorpay';
 // const addressRoutes = require('./routes/addressRoutes');
@@ -89,6 +90,7 @@ app.use('/api/v1/orders', orderRoute);
 // remove
 
 // PAYMENT
+app.use('/api/v1/payments', paymentRoute);
 // initiate
 // verify
 // store
@@ -162,6 +164,15 @@ app.post('/verify-payment', async (req, res) => {
     res.status(400).json({ success: false, message: 'Invalid signature' });
   }
 });
+
+
+app.post('/razorpay-webhook', async (req, res) => {
+  const { body } = req;
+  // console.log('Razorpay Webhook:', body);
+  const paymentPayload = body.payload
+  console.log(paymentPayload);
+  res.json({ success: true });
+})
 
 app.get('/razor-ui', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/razorpay.html'));

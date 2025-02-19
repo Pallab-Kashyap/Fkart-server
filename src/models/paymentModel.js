@@ -32,13 +32,30 @@ const Payment = sequelize.define(
       type: DataTypes.ENUM(...Object.values(PAYMENT_METHOD)),
       allowNull: false,
     },
+    payment_gateway_method: {
+      type: DataTypes.STRING(255),
+    },
     payment_status: {
       type: DataTypes.ENUM(...Object.values(PAYMENT_STATUS)),
       // defaultValue: PAYMENT_STATUS.PENDING,
     },
-    transaction_id: {
+    razorpay_transaction_id: {
       type: DataTypes.STRING(255),
       unique: true,
+    },
+    amount: {
+      type: DataTypes.DECIMAL(10, 2),
+      allowNull: false,
+    },
+    currency: {
+      type: DataTypes.STRING(3),
+      allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING(255),
+    },
+    contact: {
+      type: DataTypes.STRING(15),
     },
     payment_gateway: {
       type: DataTypes.STRING(255),
@@ -56,6 +73,15 @@ const Payment = sequelize.define(
     },
     razorpay_signature: {
       type: DataTypes.STRING(255),
+    },
+    fee: {
+      type: DataTypes.DECIMAL(10, 2),
+    },
+    tax: {
+      type: DataTypes.DECIMAL(10, 2),
+    },
+    error: {
+      type: DataTypes.JSON,
     },
   },
   {

@@ -1,12 +1,47 @@
+import { Category, Product, ProductVariation } from '../models/index.js';
+import { Op } from 'sequelize';
+import ApiError from '../utils/APIError.js';
+import ApiResponse from '../utils/APIResponse.js';
+import asyncWrapper from '../utils/asyncWrapper.js';
+import { fetchSquareCatalogList } from './squareController.js';
+import { sequelize } from '../config/DBConfig.js';
 
-import { Category, Product, ProductVariation } from "../models/index.js";
-import { Op } from "sequelize";
-import ApiError from "../utils/APIError.js";
-import ApiResponse from "../utils/APIResponse.js";
-import asyncWrapper from "../utils/asyncWrapper.js";
-import { fetchSquareCatalogList } from "./squareController.js";
-import { sequelize } from "../config/DBConfig.js";
+const buildFilterConditions = ({
+  category,
+  minPrice,
+  maxPrice,
+  size,
+  color,
+  search,
+  inStock,
+  rating,
+  brands,
+}) => {
+  const whereClause = {};
+  const variationWhereClause = {};
 
+  if (search) {
+    whereClause[Op.or] = [
+      { product_name: { [Op.iLike]: `%${search}%` } },
+      { description: { [Op.iLike]: `%${search}%` } },
+    ];
+  }
+
+  if (inStock) whereClause.quantity = { [Op.gt]: 0 };
+  if (rating) whereClause.rating = { [Op.gte]: rating };
+  if (brands) whereClause.brand = { [Op.in]: brands.split(',') };
+
+  if (size) variationWhereClause.size = { [Op.in]: size.split(',') };
+  if (color) variationWhereClause.color = { [Op.in]: color.split(',') };
+
+  if (minPrice || maxPrice) {
+    variationWhereClause.price = {};
+    if (minPrice) variationWhereClause.price[Op.gte] = minPrice;
+    if (maxPrice) variationWhereClause.price[Op.lte] = maxPrice;
+  }
+
+  return { whereClause, variationWhereClause };
+};
 
 const getCategoryByName = async (categoryName) => {
   let category = await Category.findOne({
@@ -100,15 +135,27 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     maxPrice,
     size,
     color,
+    search,
+    inStock,
+    rating,
+    brands,
     sort = 'createdAt',
     order = 'DESC',
     page = 1,
     limit = 10,
-    search,
   } = req.query;
 
-  const whereClause = {};
-  const variationWhereClause = {};
+  const { whereClause, variationWhereClause } = buildFilterConditions({
+    category,
+    minPrice,
+    maxPrice,
+    size,
+    color,
+    search,
+    inStock,
+    rating,
+    brands,
+  });
 
   if (category) {
     const categoryIds = await getCategoryByName(category);
@@ -117,15 +164,10 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     }
   }
 
-  if (search) whereClause.product_name = { [Op.iLike]: `%{search}%` };
-  if (size) variationWhereClause.size = { [Op.in]: size.split(',') };
-  if (color) variationWhereClause.color = color;
-  if (minPrice) variationWhereClause.price = { [Op.gte]: minPrice };
-  if (maxPrice)
-    variationWhereClause.price = {
-      ...variationWhereClause.price,
-      [Op.lte]: maxPrice,
-    };
+  const sortOrder = sort.split(',').map((field) => {
+    const [name, direction = order] = field.split(':');
+    return [name, direction.toUpperCase()];
+  });
 
   const products = await Product.findAndCountAll({
     where: whereClause,
@@ -146,7 +188,7 @@ const getAllProducts = asyncWrapper(async (req, res) => {
         },
       },
     ],
-    order: [[sort, order]],
+    order: sortOrder,
     limit,
     offset: (page - 1) * limit,
     distinct: true,
@@ -194,19 +236,51 @@ const getProductById = asyncWrapper(async (req, res) => {
 
 const getProductsByCategory = asyncWrapper(async (req, res) => {
   const { category } = req.params;
-  const { page = 1, limit = 10 } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    sort = 'createdAt',
+    order = 'DESC',
+    minPrice,
+    maxPrice,
+    size,
+    color,
+    inStock,
+    rating,
+    brands,
+  } = req.query;
 
   const categoryIds = await getCategoryByName(category);
   if (!categoryIds?.length) {
     throw new ApiError(404, 'Category not found');
   }
 
+  const { whereClause, variationWhereClause } = buildFilterConditions({
+    minPrice,
+    maxPrice,
+    size,
+    color,
+    inStock,
+    rating,
+    brands,
+  });
+
+  whereClause.category_id = { [Op.in]: categoryIds };
+
+  const sortOrder = sort.split(',').map((field) => {
+    const [name, direction = order] = field.split(':');
+    return [name, direction.toUpperCase()];
+  });
+
   const products = await Product.findAndCountAll({
-    where: { category_id: { [Op.in]: categoryIds } },
+    where: whereClause,
     include: [
       {
         model: ProductVariation,
         as: 'variations',
+        where: Object.keys(variationWhereClause).length
+          ? variationWhereClause
+          : undefined,
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
       {
@@ -215,6 +289,7 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
         attributes: ['id', 'name', 'parent_id'],
       },
     ],
+    order: sortOrder,
     limit,
     offset: (page - 1) * limit,
     distinct: true,
@@ -240,29 +315,57 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
 });
 
 const searchProducts = asyncWrapper(async (req, res) => {
-  const { q } = req.query;
-  const products = await Product.findAll({
-    where: {
-      [Op.or]: [
-        { product_name: { [Op.iLike]: `%${q}%` } },
-        { description: { [Op.iLike]: `%${q}%` } },
-      ],
-    },
+  const {
+    q,
+    sort = 'createdAt',
+    order = 'DESC',
+    page = 1,
+    limit = 10,
+    minPrice,
+    maxPrice,
+    size,
+    color,
+    inStock,
+    rating,
+    brands,
+  } = req.query;
+
+  const { whereClause, variationWhereClause } = buildFilterConditions({
+    search: q,
+    minPrice,
+    maxPrice,
+    size,
+    color,
+    inStock,
+    rating,
+    brands,
+  });
+
+  const sortOrder = sort.split(',').map((field) => {
+    const [name, direction = order] = field.split(':');
+    return [name, direction.toUpperCase()];
+  });
+
+  const products = await Product.findAndCountAll({
+    where: whereClause,
     include: [
       {
         model: ProductVariation,
         as: 'variations',
+        where: Object.keys(variationWhereClause).length
+          ? variationWhereClause
+          : undefined,
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
     ],
+    order: sortOrder,
+    limit,
+    offset: (page - 1) * limit,
+    distinct: true,
     attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] },
   });
 
-  if (products.length === 0) {
-    return ApiResponse.success(res, 'No products found', []);
-  }
-
-  const processedProducts = products.map((product) => {
+  const processedProducts = products.rows.map((product) => {
     const data = product.toJSON();
     if (data.variations?.length) {
       data.variations = [data.variations[0]];
@@ -311,10 +414,7 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
         as: 'category',
         attributes: ['id', 'name', 'parent_id'],
         where: {
-          [Op.or]: [
-            { id: rootCategoryId },
-            { parent_id: rootCategoryId },
-          ],
+          [Op.or]: [{ id: rootCategoryId }, { parent_id: rootCategoryId }],
         },
       },
       {
@@ -345,6 +445,37 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
   );
 });
 
+const getProductVariationsStock = asyncWrapper(async (req, res) => {
+  const { ids } = req.body;
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    throw new ApiError(400, 'Valid variation IDs array is required');
+  }
+
+  const variations = await ProductVariation.findAll({
+    where: {
+      id: {
+        [Op.in]: ids,
+      },
+    },
+    attributes: ['id', 'stock_quantity', 'in_stock'],
+  });
+
+  const stockInfo = variations.reduce((acc, variation) => {
+    acc[variation.id] = {
+      stock_quantity: variation.stock_quantity,
+      in_stock: variation.in_stock,
+    };
+    return acc;
+  }, {});
+
+  return ApiResponse.success(
+    res,
+    'Stock information fetched successfully',
+    stockInfo
+  );
+});
+
 export {
   fetchAndStoreProductFromSquare,
   getAllProducts,
@@ -352,4 +483,5 @@ export {
   getProductsByCategory,
   searchProducts,
   getRelatedProducts,
+  getProductVariationsStock, // Add this export
 };
