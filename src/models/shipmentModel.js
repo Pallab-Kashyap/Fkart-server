@@ -56,7 +56,6 @@ const Shipment = sequelize.define(
         "cancelled"
       ),
       allowNull: false,
-      defaultValue: "created",
     },
 
     freight_charge: {

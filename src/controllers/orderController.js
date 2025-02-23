@@ -10,7 +10,6 @@ import {
   Address,
   User,
   Refund,
-  OrderAddress,
 } from '../models/index.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiResponse from '../utils/APIResponse.js';

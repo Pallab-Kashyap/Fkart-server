@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import {
   cartCheckout,
-  getOrder,
+  getOrders,
   cancelOrder,
   returnOrder,
   createOrderFromProduct,
@@ -13,7 +13,7 @@ const router = Router();
 
 router.post('/cart-checkout', auth, cartCheckout);
 router.post('/create-from-product', auth, createOrderFromProduct);
-router.get('/:status', auth, getOrder);
+router.get('/:status', auth, getOrders);
 router.get('/details/:orderId', auth, getOrderDetails);
 router.post('/:orderId/cancel', auth, cancelOrder);
 router.post('/:orderId/return', auth, returnOrder);
