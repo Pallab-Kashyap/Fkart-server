@@ -1,7 +1,6 @@
 import axios from 'axios';
 
 class ShipRocket {
-
   constructor(token) {
     this.axiosAuthInstance = axios.create({
       baseURL: process.env.SHIPROCKET_URL,
@@ -10,7 +9,7 @@ class ShipRocket {
     this.axiosInstance = axios.create({
       baseURL: process.env.SHIPROCKET_URL,
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
       },
     });
   }
@@ -31,25 +30,77 @@ class ShipRocket {
   async requestCreateOrder(request) {
     try {
       const {
-        order_id, order_date, pickup_location, channel_id, comment,
-        billing_customer_name, billing_last_name, billing_address,
-        billing_address_2, billing_city, billing_pincode, billing_state,
-        billing_country, billing_email, billing_phone,
-        shipping_is_billing, order_items, payment_method, shipping_charges,
-        giftwrap_charges, transaction_charges, total_discount, sub_total,
-        length, breadth, height, weight,
+        order_id,
+        order_date,
+        pickup_location,
+        channel_id,
+        comment,
+        billing_customer_name,
+        billing_last_name,
+        billing_address,
+        billing_address_2,
+        billing_city,
+        billing_pincode,
+        billing_state,
+        billing_country,
+        billing_email,
+        billing_phone,
+        shipping_is_billing,
+        order_items,
+        payment_method,
+        shipping_charges,
+        giftwrap_charges,
+        transaction_charges,
+        total_discount,
+        sub_total,
+        length,
+        breadth,
+        height,
+        weight,
       } = request;
 
       const result = await this.axiosInstance.post('orders/create/adhoc', {
-        order_id, order_date, pickup_location, channel_id, comment,
-        billing_customer_name, billing_last_name, billing_address,
-        billing_address_2, billing_city, billing_pincode, billing_state,
-        billing_country, billing_email, billing_phone,
-        shipping_is_billing, order_items, payment_method, shipping_charges,
-        giftwrap_charges, transaction_charges, total_discount, sub_total,
-        length, breadth, height, weight,
+        order_id,
+        order_date,
+        pickup_location,
+        channel_id,
+        comment,
+        billing_customer_name,
+        billing_last_name,
+        billing_address,
+        billing_address_2,
+        billing_city,
+        billing_pincode,
+        billing_state,
+        billing_country,
+        billing_email,
+        billing_phone,
+        shipping_is_billing,
+        order_items,
+        payment_method,
+        shipping_charges,
+        giftwrap_charges,
+        transaction_charges,
+        total_discount,
+        sub_total,
+        length,
+        breadth,
+        height,
+        weight,
       });
 
+      return result.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async requestCreateReturnOrder(request) {
+    try {
+      const result = await this.axiosInstance.post(
+        'orders/create/return',
+        request
+      );
       return result.data;
     } catch (error) {
       throw error;
@@ -107,7 +158,13 @@ class ShipRocket {
 
       const data = result.data;
       const returnData = {};
-      const { pickup_scheduled_date, pickup_token_number, status: pickUpStatus, pickup_generated_date, data: message } = data.response;
+      const {
+        pickup_scheduled_date,
+        pickup_token_number,
+        status: pickUpStatus,
+        pickup_generated_date,
+        data: message,
+      } = data.response;
 
       returnData.pickup_status = data.pickup_status;
       returnData.pickup_scheduled_date = pickup_scheduled_date;
@@ -165,7 +222,9 @@ class ShipRocket {
 
       if (!response) throw new Error(error.message);
 
-      const { data: { message } } = response;
+      const {
+        data: { message },
+      } = response;
 
       return message || 'Error while operating!';
     } catch (e) {
