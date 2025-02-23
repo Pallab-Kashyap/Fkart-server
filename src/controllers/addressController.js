@@ -1,4 +1,3 @@
-
 import Address  from '../models/userAddress.js';
 import { sequelize } from '../config/DBConfig.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
@@ -20,8 +19,13 @@ const existingAddresses = await Address.findAll({ where: { user_id: userId },att
 
 //get address 
 export const getAddresses = asyncWrapper(async (req, res) => {
-  const userId = req.userId; 
-  const addresses = await Address.findAll({ where: { user_id: userId } });
+  const userId = req.userId;
+  const addresses = await Address.findAll({ 
+    where: { 
+      user_id: userId,
+      isDeleted: false 
+    }
+  });
   return ApiResponse.success(res, "Addresses fetched successfully", addresses);
 });
 // get addresses
@@ -38,11 +42,14 @@ export const updateAddress = asyncWrapper(async (req, res) => {
 // DElete adddress
 export const deleteAddress = asyncWrapper(async (req, res) => {
   const { id } = req.params;
-  const userId = req.userId; 
-  const deleted = await Address.destroy({
-    where: { id, user_id: userId }, 
-  });
-if (deleted) {
+  const userId = req.userId;
+  
+  const updated = await Address.update(
+    { isDeleted: true },
+    { where: { id, user_id: userId } }
+  );
+
+  if (updated[0] > 0) {
     return ApiResponse.success(res, "Address deleted successfully");
   } else {
     return ApiResponse.notFound(res, "Address not found");

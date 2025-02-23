@@ -95,7 +95,7 @@ const createRazorpayRefund = async (
   try {
     const refund = await razorpayInstance.payments.refund(paymentId, {
       amount,
-      speed,
+      speed: 'optimum',
     });
     return refund;
   } catch (error) {

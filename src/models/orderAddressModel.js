@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import {sequelize} from '../config/DBConfig.js';
 
-const Address = sequelize.define('Address', {
+const OrderAddress = sequelize.define('OrderAddress', {
   
   id: {
     type: DataTypes.UUID,
@@ -33,7 +33,7 @@ const Address = sequelize.define('Address', {
       notNull: { 
         msg: "Phone field required"
       },
-      is: /^[0-9]{10}$/ 
+      is: /^[0-9]{10}$/ // Example for 10-digit Indian phone number
     }
   },
   address: {
@@ -74,13 +74,10 @@ const Address = sequelize.define('Address', {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
   },
-  isDeleted: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false
-  }
 }, {
-  tableName: 'addresses',
+  tableName: 'order_addresses',
   timestamps: true,
 });
 
-export default Address;
+export default OrderAddress;
+ 
