@@ -1,97 +1,190 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Razorpay Payment</title>
-  <style>
-    .message { padding: 10px; margin: 10px 0; }
-    .error { background: #ffebee; color: #c62828; }
-    .success { background: #e8f5e9; color: #2e7d32; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Razorpay Payment Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        .container { margin-bottom: 20px; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        input, select { width: 100%; padding: 8px; margin: 5px 0 15px; }
+        button { padding: 10px 20px; background: #3399cc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #2980b9; }
+        #authStatus { margin-bottom: 20px; }
+    </style>
 </head>
 <body>
-  <h1>Razorpay Payment Gateway Integration</h1>
-  <div id="message"></div>
-  <form id="payment-form">
-    <label for="amount">Amount (INR):</label>
-    <input type="number" id="amount" name="amount" required min="1">
-    <button type="button" onclick="payNow()">Pay Now</button>
-  </form>
+    <h1>Razorpay Payment Testing Interface</h1>
 
-  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-  <script>
-    function showMessage(text, type) {
-      const msgDiv = document.getElementById('message');
-      msgDiv.className = `message ${type}`;
-      msgDiv.textContent = text;
-    }
+    <!-- Authentication Section -->
+    <div class="container" id="authSection">
+        <h2>Authentication</h2>
+        <input type="text" id="authToken" placeholder="Enter your auth token">
+        <button onclick="setAuthToken()">Set Auth Token</button>
+        <div id="authStatus"></div>
+    </div>
 
-    async function payNow() {
-      try {
-        const amount = document.getElementById('amount').value;
-        if (!amount || amount <= 0) {
-          showMessage('Please enter a valid amount', 'error');
-          return;
+    <!-- Order Creation Section -->
+    <div class="container" id="orderSection" style="display: none;">
+        <h2>Create Order</h2>
+        <label for="address">Select Address:</label>
+        <select id="addressSelect">
+            <option value="">Loading addresses...</option>
+        </select>
+
+        <label for="paymentMethod">Payment Method:</label>
+        <select id="paymentMethod">
+            <option value="PREPAID">Prepaid</option>
+            <option value="COD">Cash on Delivery</option>
+        </select>
+
+        <button onclick="createOrder()">Create Order</button>
+        <div id="orderStatus"></div>
+    </div>
+
+    <!-- Payment Section -->
+    <div class="container" id="paymentSection" style="display: none;">
+        <h2>Payment Details</h2>
+        <div id="orderDetails"></div>
+        <button onclick="initiatePayment()">Pay Now</button>
+        <div id="paymentStatus"></div>
+    </div>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script>
+        let authToken = '';
+        let currentOrder = null;
+
+        function showMessage(elementId, text, type) {
+            const element = document.getElementById(elementId);
+            element.className = `message ${type}`;
+            element.textContent = text;
         }
 
-        // Create order
-        const response = await fetch('/create-order', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount })
-        });
-
-        if (!response.ok) throw new Error('Failed to create order');
-
-        const order = await response.json();
-
-        const options = {
-          key: order.key,
-          amount: order.amount,
-          currency: order.currency,
-          name: 'Your Company Name',
-          description: 'Purchase Description',
-          order_id: order.id,
-          handler: async function (response) {
-            console.log(response);
-            try {
-              const verifyResponse = await fetch('/verify-payment', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(response)
-              });
-
-              const data = await verifyResponse.json();
-              if (data.success) {
-                showMessage('Payment successful!', 'success');
-              } else {
-                showMessage('Payment verification failed', 'error');
-              }
-            } catch (err) {
-              showMessage('Payment verification failed: ' + err.message, 'error');
+        async function setAuthToken() {
+            authToken = document.getElementById('authToken').value.trim();
+            if (!authToken) {
+                showMessage('authStatus', 'Please enter a valid auth token', 'error');
+                return;
             }
-          },
-          prefill: {
-            name: 'test',
-            email: '91287472132',
-            contact: 'ajiofeji'
-          },
-          theme: {
-            color: '#3399cc'
-          }
-        };
 
-        const rzp = new Razorpay(options);
-        rzp.on('payment.failed', function (response) {
-          showMessage('Payment failed: ' + response.error.description, 'error');
-        });
-        rzp.open();
+            try {
+                // Fetch user's addresses to verify token
+                const response = await fetch('/api/addresses', {
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
 
-      } catch (error) {
-        showMessage('Error: ' + error.message, 'error');
-      }
-    }
-  </script>
+                if (!response.ok) throw new Error('Invalid auth token');
+
+                const addresses = await response.json();
+                const addressSelect = document.getElementById('addressSelect');
+                addressSelect.innerHTML = addresses.data.map(addr => 
+                    `<option value="${addr.id}">${addr.name} - ${addr.address}, ${addr.city}</option>`
+                ).join('');
+
+                document.getElementById('orderSection').style.display = 'block';
+                showMessage('authStatus', 'Authentication successful', 'success');
+            } catch (error) {
+                showMessage('authStatus', error.message, 'error');
+            }
+        }
+
+        async function createOrder() {
+            const addressId = document.getElementById('addressSelect').value;
+            const paymentMethod = document.getElementById('paymentMethod').value;
+
+            if (!addressId) {
+                showMessage('orderStatus', 'Please select an address', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/orders/checkout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        addressId,
+                        paymentMethod
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to create order');
+
+                const orderData = await response.json();
+                currentOrder = orderData.data;
+
+                document.getElementById('paymentSection').style.display = 'block';
+                document.getElementById('orderDetails').innerHTML = `
+                    <p>Order ID: ${currentOrder.id}</p>
+                    <p>Amount: ₹${currentOrder.amount/100}</p>
+                `;
+                showMessage('orderStatus', 'Order created successfully', 'success');
+            } catch (error) {
+                showMessage('orderStatus', error.message, 'error');
+            }
+        }
+
+        async function initiatePayment() {
+            if (!currentOrder) {
+                showMessage('paymentStatus', 'Please create an order first', 'error');
+                return;
+            }
+
+            const options = {
+                key: currentOrder.key_id,
+                amount: currentOrder.amount,
+                currency: currentOrder.currency,
+                name: 'Your Store Name',
+                description: 'Test Transaction',
+                order_id: currentOrder.id,
+                handler: async function(response) {
+                    try {
+                        const verifyResponse = await fetch('/api/payments/verify', {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${authToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_signature: response.razorpay_signature
+                            })
+                        });
+
+                        const result = await verifyResponse.json();
+                        showMessage('paymentStatus', 
+                            result.success ? 'Payment successful!' : 'Payment verification failed', 
+                            result.success ? 'success' : 'error'
+                        );
+                    } catch (error) {
+                        showMessage('paymentStatus', 'Payment verification failed: ' + error.message, 'error');
+                    }
+                },
+                prefill: {
+                    name: 'Test User',
+                    email: 'test@example.com',
+                    contact: '9999999999'
+                },
+                theme: {
+                    color: '#3399cc'
+                }
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function(response) {
+                showMessage('paymentStatus', 'Payment failed: ' + response.error.description, 'error');
+            });
+            rzp.open();
+        }
+    </script>
 </body>
 </html>

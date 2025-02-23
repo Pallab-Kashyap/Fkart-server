@@ -67,7 +67,10 @@ CartItem.belongsTo(ProductVariation, {
   Cart.belongsTo(ProductVariation, { foreignKey: 'variation_id' });
 
   // ORDER
-  Order.belongsTo(Address, { foreignKey: 'order_address_id' });
+  Order.belongsTo(Address, { 
+    foreignKey: 'order_address_id',
+    as: 'shipping_address'
+  });
   Order.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Order.hasOne(Payment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
   Order.hasOne(Shipment, { foreignKey: 'order_id', onDelete: 'CASCADE' }); 
@@ -98,6 +101,7 @@ CartItem.belongsTo(ProductVariation, {
 
   // SHIPMENT
   Shipment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  Order.hasOne(Shipment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
 
   // REVIEW
   User.hasMany(Review, { foreignKey: 'user_id', onDelete: 'CASCADE' });

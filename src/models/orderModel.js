@@ -72,6 +72,12 @@ const Order = sequelize.define(
         }
       }
     },
+    return_reason: {
+      type: DataTypes.TEXT,
+    },
+    cancel_reason: {
+      type: DataTypes.TEXT,
+    },
   },
   {
     tableName: 'orders',
