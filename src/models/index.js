@@ -14,6 +14,7 @@ import SquareData from './squareDataModel.js';
 import ProductVariation from './productVariation.js';
 import Category from './categoryModel.js';
 import Refund from './refundModel.js';
+import ShiprocketAuth from './shiprocketAuthModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -27,12 +28,15 @@ const sycnDB = async () => {
   Cart.hasMany(CartItem, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
   CartItem.belongsTo(Cart, { foreignKey: 'cart_id', onDelete: 'CASCADE' });
 
-  ProductVariation.hasMany(CartItem, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
-CartItem.belongsTo(ProductVariation, {
+  ProductVariation.hasMany(CartItem, {
+    foreignKey: 'product_variation_id',
+    onDelete: 'CASCADE',
+  });
+  CartItem.belongsTo(ProductVariation, {
     foreignKey: 'product_variation_id',
     as: 'product_variation',
     onDelete: 'CASCADE',
-});
+  });
   // ADDRESS
   User.hasMany(Address, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Address.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
@@ -52,52 +56,56 @@ CartItem.belongsTo(ProductVariation, {
   // Add Product-Category association
   Product.belongsTo(Category, {
     foreignKey: 'category_id',
-    as: 'category'
+    as: 'category',
   });
   Category.hasMany(Product, {
     foreignKey: 'category_id',
-    as: 'products'
+    as: 'products',
   });
 
   // CATEGORY
   Category.hasMany(Category, { foreignKey: 'parent_id', as: 'subcategories' });
-  Category.belongsTo(Category, { foreignKey: 'parent_id', as: 'parentCategory' });
+  Category.belongsTo(Category, {
+    foreignKey: 'parent_id',
+    as: 'parentCategory',
+  });
 
   // CART
   Cart.belongsTo(ProductVariation, { foreignKey: 'variation_id' });
 
   // ORDER
-  Order.belongsTo(Address, { 
+  Order.belongsTo(Address, {
     foreignKey: 'order_address_id',
-    as: 'shipping_address'
+    as: 'shipping_address',
   });
   Order.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Order.hasOne(Payment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
-  Order.hasOne(Shipment, { foreignKey: 'order_id', onDelete: 'CASCADE' }); 
-  Order.hasMany(OrderItem, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  Order.hasOne(Shipment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  Order.hasMany(OrderItem, {
+    foreignKey: 'order_id',
+    onDelete: 'CASCADE',
+    as: 'orderItems',
+  });
 
   // ORDER ITEM
-  OrderItem.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  OrderItem.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE'});
   OrderItem.belongsTo(Product, {
     foreignKey: 'product_id',
     onDelete: 'CASCADE',
   });
-  OrderItem.belongsTo(ProductVariation, { 
+  OrderItem.belongsTo(ProductVariation, {
     foreignKey: 'product_variation_id',
     as: 'product_variation',
-    onDelete: 'CASCADE'
+    onDelete: 'CASCADE',
   });
-
 
   // PAYMENT
   Payment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
   Payment.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-  
 
   // PAYMENT & REFUND
   Payment.hasOne(Refund, { foreignKey: 'payment_id', onDelete: 'CASCADE' });
   Refund.belongsTo(Payment, { foreignKey: 'payment_id' });
-
 
   // SHIPMENT
   Shipment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
@@ -120,7 +128,8 @@ CartItem.belongsTo(ProductVariation, {
     // await OTPVerification.sync();
     // await Order.sync();
     // await Payment.sync();
-    await sequelize.sync({alter: true});
+
+    await sequelize.sync();
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {

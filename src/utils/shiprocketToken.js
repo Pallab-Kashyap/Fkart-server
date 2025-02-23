@@ -10,10 +10,10 @@ try {
     		return record.token;
     	}
     
-        const url = process.env.SHIPROCKET_BASE_URL + "/auth/login";
+        const url = process.env.SHIPROCKET_BASE_URL + "auth/login";
         const data = {
-            email: process.env.SHIPROCKET_EMAIL,
-            password: process.env.SHIPROCKET_PASSWORD,
+            email: process.env.SHIPROCKET_USER_EMAIL,
+            password: process.env.SHIPROCKET_USER_PASSWORD,
         }
 
         if(!url || !data.email || !data.password) {

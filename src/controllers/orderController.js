@@ -36,13 +36,18 @@ const createOrderItems = async (items, transaction) => {
     variations = await ProductVariation.findAll({
       where: { id: variationIds },
       include: [
-        { model: Product, as: 'product', attributes: ['id', 'product_name'] },
+        { 
+          model: Product, 
+          as: 'product', 
+          attributes: ['id', 'product_name'],
+          required: true // Force INNER JOIN
+        },
       ],
       transaction: transaction,
       lock: transaction.LOCK.UPDATE, 
     });
   } catch (error) {
-    await transaction.rollback();
+    console.log(error);
     throw new Error(`Error fetching product variations: ${error.message}`);
   }
   console.log('CREATING VARIATION MAP');
@@ -56,9 +61,7 @@ const createOrderItems = async (items, transaction) => {
       const productName = variation
         ? variation.product.product_name
         : `Product Variation ID ${item.product_variation_id}`;
-      throw new Error(
-        `${productName} is out of stock or insufficient quantity available`
-      );
+      throw new ApiError(400, `${productName} is out of stock or insufficient quantity available`);
     }
 
     const totalItemPrice = variation.price * item.quantity;
@@ -121,12 +124,13 @@ const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => {
     } else {
       console.log('CREATING RAZORPAY ORDER');
       const razorpayOrder = await createRazorpayOrder(
-        totalPrice,
+        totalPrice*100,
         'INR',
-        `recptid_${order.id}`
+        `receiptid_${order.id.substring(0, 10)}`
       );
-      await Payment.upsert(
+      await Payment.create(
         {
+          id: crypto.randomUUID(),
           user_id: userInfo.userId,
           order_id: order.id,
           payment_method: PAYMENT_METHOD.PREPAID,
@@ -138,10 +142,9 @@ const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => {
         },
         { transaction: transaction }
       );
-      return { data: razorpayOrder };
+      return razorpayOrder || null;
     }
   } catch (error) {
-    await transaction.rollback();
     console.error('Error placing order:', error);
     throw error;
   }
@@ -238,20 +241,7 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
     userId,
     body: { addressId, paymentMethod },
   } = req;
-
-  // Validate address exists and isn't deleted
-  const address = await Address.findOne({
-    where: { 
-      id: addressId,
-      user_id: userId,
-      isDeleted: false
-    }
-  });
-
-  if (!address) {
-    throw ApiError.badRequest('Invalid or deleted address');
-  }
-
+  
   if (
     !(
       paymentMethod.toLowerCase() === PAYMENT_METHOD.COD ||

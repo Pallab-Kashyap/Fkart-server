@@ -46,13 +46,13 @@ export const createShiprocketOrder = async (orderId) => {
     });
 
     if (!order) {
-      throw new APIError('Order not found', 404);
+      throw APIError.badRequest('Order not found');
     }
 
     const shipRocketOrderData = {
       order_id: order.order_id,
       order_date: order.createdAt,
-      pickup_location: 'Primary',
+      pickup_location: 'work',
       channel_id: '',
       comment: 'Order creation requested',
       billing_customer_name: order.shipping_address.name,
@@ -67,9 +67,10 @@ export const createShiprocketOrder = async (orderId) => {
       shipping_is_billing: true,
       order_items: order.orderItems.map((item) => ({
         name: item.product_variation.product.product_name,
-        sku: `${item.product_variation.product.id}-${item.product_variation.id}`,
+        // sku: `${item.product_variation.product.id}-${item.product_variation.id}`,
+        sku: `sku`,
         units: item.quantity,
-        selling_price: item.price,
+        selling_price: item.selling_price,
         size: item.product_variation.size,
         color: item.product_variation.color,
       })),
@@ -77,9 +78,9 @@ export const createShiprocketOrder = async (orderId) => {
       shipping_charges: order.shipping_charges || 0,
       giftwrap_charges: 0,
       transaction_charges: 0,
-      total_discount: order.discount || 0,
+      total_discount: order?.discount || 0,
       sub_total: order.total_amount,
-      // Using dimensions from the first product variation as reference
+     
       length: order.orderItems[0]?.product_variation?.length || 10,
       breadth: order.orderItems[0]?.product_variation?.breadth || 10,
       height: order.orderItems[0]?.product_variation?.height || 10,
@@ -89,78 +90,79 @@ export const createShiprocketOrder = async (orderId) => {
     const token = await getShiprocketToken();
     const shipRocket = new ShipRocket(token);
 
-    // Process order through Shiprocket
-    const step = 0;
+   
+    let step = 0;
     let responseData = {};
+    let shiprocketOrderResponse; 
+
     try {
-      const orderData = await shipRocket.requestCreateOrder(shipRocketOrderData);
-      const shipmentId = orderData.shipment_id;
-      const orderId = orderData.order_id;
+      shiprocketOrderResponse = await shipRocket.requestCreateOrder(shipRocketOrderData);
+      const shipmentId = shiprocketOrderResponse.shipment_id;
+      const orderId = shiprocketOrderResponse.order_id;
       step++;
 
       // Assign AWB
-      const awbData = await shipRocket.generateAWB(shipmentId);
+      // const awbData = await shipRocket.generateAWB(shipmentId);
       step++;
       // Generate Label
-      const labelData = await shipRocket.generateLabel([shipmentId]);
+      // const labelData = await shipRocket.generateLabel([shipmentId]);
       step++;
       // Generate Invoice
-      const invoiceData = await shipRocket.generateInvoice([orderId]);
+      // const invoiceData = await shipRocket.generateInvoice([orderId]);
 
       // Schedule Pickup
-      const pickupData = await shipRocket.shipmentPickUp([shipmentId]);
+      // const pickupData = await shipRocket.shipmentPickUp([shipmentId]);
       step++;
       // Generate Manifest
-      const manifestData = await shipRocket.generateManifests([shipmentId]);
+      // const manifestData = await shipRocket.generateManifests([shipmentId]);
       step++;
       
       responseData = {
-        order: orderData,
-        awb: awbData,
-        label: labelData,
-        invoice: invoiceData,
-        pickup: pickupData,
-        manifest: manifestData,
+        order: shiprocketOrderResponse,
+        // awb: awbData,
+        // label: labelData,
+        // invoice: invoiceData,
+        // pickup: pickupData,
+        // manifest: manifestData,
       };
     } catch (error) {
-      throw new APIError.internal(
+      throw APIError.internal(
         `Error processing order through Shiprocket in step.on: ${step} error: ${error.message}`
       );
     }
 
-    // Create/Update shipment record instead of updating order
-
     try {
       await Shipment.create({
         order_id: orderId,
-        shiprocket_order_id: orderData.order_id,
-        shipment_id: orderData.shipment_id,
-        awb_code: awbData?.awb,
-        courier_id: awbData?.courier_company_id,
-        courier_name: awbData?.courier_name,
+        shiprocket_order_id: shiprocketOrderResponse.order_id,
+        shipment_id: shiprocketOrderResponse.shipment_id,
+        // awb_code: awbData?.awb,
+        // courier_id: awbData?.courier_company_id,
+        // courier_name: awbData?.courier_name,
         status: 'awb_generated',
-        freight_charge: orderData.shipping_charges,
+        freight_charge: shiprocketOrderResponse.shipping_charges,
         length: shipRocketOrderData.length,
         breadth: shipRocketOrderData.breadth,
         height: shipRocketOrderData.height,
         weight: shipRocketOrderData.weight,
-        pickup_scheduled_at: pickupData?.pickup_scheduled_date,
-        label_url: labelData?.label_url,
-        invoice_url: invoiceData?.invoice_url,
-        tracking_url: awbData?.tracking_url,
-        manifest_url: manifestData?.manifest_url,
+        // pickup_scheduled_at: pickupData?.pickup_scheduled_date,
+        // label_url: labelData?.label_url,
+        // invoice_url: invoiceData?.invoice_url,
+        // tracking_url: awbData?.tracking_url,
+        // manifest_url: manifestData?.manifest_url,
         shipping_details: responseData,
         metadata: {
-          pickup_token: pickupData?.pickup_token,
-          manifest_token: manifestData?.manifest_token,
+          // pickup_token: pickupData?.pickup_token,
+          // manifest_token: manifestData?.manifest_token,
         },
       });
     } catch (error) {
-      throw new APIError.internal('Error creating shipment record in database');
+      console.log(error);
+      throw APIError.internal('Error creating shipment record in database');
     }
 
-    APIResponse.success(res, 'Order processed successfully!', responseData);
   } catch (error) {
+    console.log(error);
     throw error;
   }
 };
@@ -180,7 +182,7 @@ export const cancelShiprocketOrder = async ( shiprocket_order_id ) => {
    const shipRocket = new ShipRocket(token);
    const cancelResponse = await shipRocket.cancelOrder([shiprocket_order_id]);
  
-   // Update shipment status
+  
    await shipment.update({ 
      status: 'cancelled',
      cancelled_at: new Date(),
@@ -265,7 +267,7 @@ export const shiprocketReturnOrder = async (data) => {
     const shipRocket = new ShipRocket(token);
     const returnOrder = await shipRocket.requestCreateReturnOrder(returnOrderData);
 
-    // Create return shipment record
+
     const returnShipment = await Shipment.create({
       order_id: orderDetails.original_order_id,
       shiprocket_order_id: returnOrder.order_id,

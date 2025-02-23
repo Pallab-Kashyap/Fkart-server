@@ -14,6 +14,7 @@ const Cart = sequelize.define('Cart', {
     },
     user_id: {
         type: DataTypes.UUID,
+        unique: true,
         allowNull: false,
         references: {
             model: 'users', // User table

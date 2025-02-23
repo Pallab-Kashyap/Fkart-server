@@ -3,11 +3,11 @@ import axios from 'axios';
 class ShipRocket {
   constructor(token) {
     this.axiosAuthInstance = axios.create({
-      baseURL: process.env.SHIPROCKET_URL,
+      baseURL: process.env.SHIPROCKET_BASE_URL,
     });
 
     this.axiosInstance = axios.create({
-      baseURL: process.env.SHIPROCKET_URL,
+      baseURL: process.env.SHIPROCKET_BASE_URL,
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -23,6 +23,10 @@ class ShipRocket {
 
       return result.data;
     } catch (error) {
+      console.error('[ShipRocket.generateShiprocketAuthToken] Error:', {
+        message: error.message,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -33,12 +37,12 @@ class ShipRocket {
         order_id,
         order_date,
         pickup_location,
-        channel_id,
-        comment,
+        channel_id = "",
+        comment = "",
         billing_customer_name,
-        billing_last_name,
+        billing_last_name = "",
         billing_address,
-        billing_address_2,
+        billing_address_2 = "",
         billing_city,
         billing_pincode,
         billing_state,
@@ -91,6 +95,11 @@ class ShipRocket {
 
       return result.data;
     } catch (error) {
+      console.error('[ShipRocket.requestCreateOrder] Error:', {
+        message: error.message,
+        orderId: request.order_id,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -103,6 +112,11 @@ class ShipRocket {
       );
       return result.data;
     } catch (error) {
+      console.error('[ShipRocket.requestCreateReturnOrder] Error:', {
+        message: error.message,
+        request,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -120,6 +134,11 @@ class ShipRocket {
 
       return returnData;
     } catch (error) {
+      console.error('[ShipRocket.generateAWB] Error:', {
+        message: error.message,
+        shipmentId: shipment_id,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -133,6 +152,11 @@ class ShipRocket {
       const data = result.data;
       return data.label_url;
     } catch (error) {
+      console.error('[ShipRocket.generateLabel] Error:', {
+        message: error.message,
+        shipmentId: shipment_id,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -146,6 +170,11 @@ class ShipRocket {
       const data = result.data;
       return data.invoice_url;
     } catch (error) {
+      console.error('[ShipRocket.generateInvoice] Error:', {
+        message: error.message,
+        ids,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -174,6 +203,11 @@ class ShipRocket {
 
       return returnData;
     } catch (error) {
+      console.error('[ShipRocket.shipmentPickUp] Error:', {
+        message: error.message,
+        shipmentId: shipment_id,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -187,6 +221,11 @@ class ShipRocket {
       const data = result.data;
       return data.manifest_url;
     } catch (error) {
+      console.error('[ShipRocket.generateManifests] Error:', {
+        message: error.message,
+        shipmentId: shipment_id,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -200,6 +239,11 @@ class ShipRocket {
       const data = result.data;
       return data.manifest_url;
     } catch (error) {
+      console.error('[ShipRocket.printManifests] Error:', {
+        message: error.message,
+        orderIds: order_ids,
+        response: error.response?.data
+      });
       throw error;
     }
   }
@@ -212,6 +256,11 @@ class ShipRocket {
 
       return true;
     } catch (error) {
+      console.error('[ShipRocket.cancelOrder] Error:', {
+        message: error.message,
+        ids,
+        response: error.response?.data
+      });
       throw error;
     }
   }

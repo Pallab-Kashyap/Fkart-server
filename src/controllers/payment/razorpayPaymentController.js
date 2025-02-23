@@ -9,10 +9,17 @@ import ApiError from '../../utils/APIError.js';
 import asyncWrapper from '../../utils/asyncWrapper.js';
 import ApiResponse from '../../utils/APIResponse.js';
 import { Order } from '../../models/index.js';
-import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from '../../constants.js';
+import {
+  ORDER_STATUS,
+  PAYMENT_METHOD,
+  PAYMENT_STATUS,
+} from '../../constants.js';
 
 import { bulkDecrementStock } from '../orderController.js';
 import ProcessedWebhookEvent from '../../models/webhook.js';
+import { cloneDeep } from 'sequelize/lib/utils';
+import { sequelize } from '../../config/DBConfig.js';
+import { createShiprocketOrder } from '../shiprocketController.js';
 
 // Helper functions-------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -82,7 +89,7 @@ const recordProcessedWebhookEvent = async (
       { transaction }
     );
   } catch (error) {
-    throw new Error('Error recording processed webhook event');
+    throw new Error(error);
   }
 };
 
@@ -107,8 +114,9 @@ const createRazorpayRefund = async (
 const createRazorpayOrder = async (
   amount,
   currency,
-  receipt = `rcptid_${Date.now()}`
+  receipt = `Receipt${Date.now()}`
 ) => {
+  console.log(receipt);
   try {
     const order = await razorpayInstance.orders.create({
       amount,
@@ -128,7 +136,7 @@ const createRazorpayOrder = async (
 
 const razorpayPaymentSuccessWebhook = async (paymentData) => {
   const orderId = paymentData.order_id;
-
+  console.log('GOT SUCCESS PAYMENT');
   const transaction = await sequelize.transaction();
 
   try {
@@ -150,7 +158,22 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
     if (!paymentRecord) {
       throw new Error(400, `Payment record not found for order ID: ${orderId}`);
     }
+    
 
+    console.log('Stored payment amount:', paymentRecord.amount);
+    console.log('Webhook payment amount:', paymentData.amount);
+
+    if (Math.abs(paymentRecord.amount*100 - paymentData.amount) > 1) {
+      console.log('Amount mismatch details:', {
+        storedAmount: paymentRecord.amount,
+        receivedAmount: paymentData.amount,
+        difference: paymentRecord.amount - paymentData.amount
+      });
+      throw new ApiError(400, `Payment amount mismatch for order ID: ${orderId}`);
+    }
+
+    console.log('Amount validation passed');
+    
     if (
       paymentRecord.payment_status === PAYMENT_STATUS.SUCCESSFUL ||
       paymentRecord.payment_status === PAYMENT_STATUS.REFUNDED
@@ -164,11 +187,8 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
       return;
     }
 
-    if (paymentRecord.amount !== paymentData.amount) {
-      throw new Error(400, `Payment amount mismatch for order ID: ${orderId}`);
-    }
-
-    await Payment.update(
+    console.log('udate');
+    const up = await Payment.update(
       {
         payment_status: PAYMENT_STATUS.SUCCESSFUL,
         razorpay_transaction_id: paymentData.acquirer_data?.bank_transaction_id,
@@ -180,10 +200,12 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
         tax: paymentData.tax,
       },
       {
-        where: { order_id: orderId },
+        where: { razorpay_order_id: orderId },
         transaction: transaction,
       }
     );
+
+    console.log('UP', up);
 
     await Order.update(
       {
@@ -195,17 +217,6 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
       }
     );
 
-    const orderItemsForStockUpdate = await OrderItem.findAll({
-      where: { order_id: paymentRecord.order_id },
-      transaction: transaction,
-    });
-    const variationUpdates = orderItemsForStockUpdate.map((orderItem) => ({
-      id: orderItem.product_variation_id,
-      quantityToDecrement: orderItem.quantity,
-    }));
-
-    await bulkDecrementStock(variationUpdates, transaction);
-
     await recordProcessedWebhookEvent(
       paymentData.id,
       'payment.captured',
@@ -213,6 +224,8 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
     );
 
     await transaction.commit();
+
+    await createShiprocketOrder(paymentRecord.order_id)
   } catch (error) {
     await transaction.rollback();
     console.error('Error handling Razorpay payment success webhook:', error);
@@ -335,7 +348,7 @@ const razorpayWebhook = async (req, res) => {
     const event = req.body;
     const eventType = event.event;
     const paymentPayload = event.payload.payment.entity;
-
+    console.log(eventType);
     if (eventType === 'payment.captured') {
       await razorpayPaymentSuccessWebhook(paymentPayload);
       return ApiResponse.success(

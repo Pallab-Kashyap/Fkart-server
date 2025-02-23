@@ -8,20 +8,18 @@ const calculateTotalPrice = (cartItems) => {
 };
 
 // Create a new Cart
-export const createCart = asyncWrapper(async (req, res) => {
-  const userId = req.userId;
-  const [cart, created] = await Cart.findOrCreate({
-    where: { user_id: userId },
-    defaults: { totalprice: 0 },
-    attributes: { exclude: ['user_id', 'createdAt', 'updatedAt'] }
-  });
-
-  if (!created) {
-    return ApiResponse.success(res, "Cart already exists", cart);
+export const createCart = async (userId, transaction) => {
+  try {
+    await Cart.findOrCreate({
+      where: { user_id: userId },
+      defaults: { status: 'active' },
+      transaction
+    });
+  } catch (error) {
+    console.log(error);
+    throw ApiError.internal('Error creating cart'); // Fixed: removed 'new' keyword
   }
-
-  return ApiResponse.created(res, "Cart created successfully", cart);
-});
+};
 
 // Fetch cart or get cart items
 export const getCart = asyncWrapper(async (req, res) => {
@@ -129,11 +127,11 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
   });
 
   if (!variation) {
-    return ApiResponse.notFound(res, "Product variation not found");
+    return ApiError.notFound(res, "Product variation not found");
   }
 
   if (variation.stock_quantity < quantity) {
-    return ApiResponse.badRequest(res, "Insufficient stock");
+    return ApiError.badRequest(res, "Insufficient stock");
   }
 
   const existingItem = await CartItem.findOne({ where: { cart_id: cart.id, product_variation_id } });
@@ -199,24 +197,15 @@ export const updateCartItem = asyncWrapper(async (req, res) => {
 export const deleteCartItem = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const cartItem = await CartItem.findByPk(id);
-
+console.log('cartItem');
   if (!cartItem) {
-    return ApiResponse.notFound(res, "CartItem not found");
+    return ApiError.badRequest("CartItem not found");
   }
 
-  const cart = await Cart.findByPk(cartItem.cart_id);
-
-  if (!cart) {
-    return ApiResponse.notFound(res, "Cart not found");
-  }
-
-  await sequelize.transaction(async (t) => {
-    cart.totalprice -= cartItem.price * cartItem.quantity;
-    await cartItem.destroy({ transaction: t });
-    await cart.save({ transaction: t });
-  });
-
-  return ApiResponse.success(res, "CartItem deleted successfully");
+    await cartItem.destroy();
+    console.log('jfeiojefwioewiofewoifwoifeowfowwfpwpwp;');
+    ApiResponse.success(res, "CartItem deleted successfully", id);
+    console.log('responseed');
 });
 
 // Clear Cart
@@ -225,7 +214,7 @@ export const clearCart = asyncWrapper(async (req, res) => {
   const cart = await Cart.findByPk(cart_id);
 
   if (!cart) {
-    return ApiResponse.notFound(res, "Cart not found");
+    return ApiError.notFound(res, "Cart not found");
   }
 
   await sequelize.transaction(async (t) => {
@@ -234,6 +223,6 @@ export const clearCart = asyncWrapper(async (req, res) => {
     await cart.save({ transaction: t });
   });
 
-  return ApiResponse.success(res, "Cart cleared successfully");
+  return ApiError.success(res, "Cart cleared successfully");
 });
 

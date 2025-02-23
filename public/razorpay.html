@@ -65,32 +65,48 @@
         }
 
         async function setAuthToken() {
-            authToken = document.getElementById('authToken').value.trim();
-            if (!authToken) {
-                showMessage('authStatus', 'Please enter a valid auth token', 'error');
-                return;
-            }
-
             try {
-                // Fetch user's addresses to verify token
-                const response = await fetch('/api/addresses', {
+                authToken = document.getElementById('authToken').value.trim();
+                if (!authToken) {
+                    showMessage('authStatus', 'Please enter a valid auth token', 'error');
+                    return;
+                }
+
+                console.log('Attempting to fetch addresses...');
+                const response = await fetch('/api/v1/addresses', {
                     headers: {
-                        'Authorization': `Bearer ${authToken}`
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
                     }
                 });
 
-                if (!response.ok) throw new Error('Invalid auth token');
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Response data:', data);
 
-                const addresses = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Server returned ' + response.status);
+                }
+
+                if (!data.data || !Array.isArray(data.data)) {
+                    throw new Error('Invalid data format received from server');
+                }
+
                 const addressSelect = document.getElementById('addressSelect');
-                addressSelect.innerHTML = addresses.data.map(addr => 
-                    `<option value="${addr.id}">${addr.name} - ${addr.address}, ${addr.city}</option>`
-                ).join('');
+                if (data.data.length === 0) {
+                    addressSelect.innerHTML = '<option value="">No addresses found</option>';
+                } else {
+                    addressSelect.innerHTML = data.data.map(addr => 
+                        `<option value="${addr.id}">${addr.name} - ${addr.address}, ${addr.city}</option>`
+                    ).join('');
+                }
 
                 document.getElementById('orderSection').style.display = 'block';
                 showMessage('authStatus', 'Authentication successful', 'success');
             } catch (error) {
-                showMessage('authStatus', error.message, 'error');
+                console.error('Authentication error:', error);
+                showMessage('authStatus', `Authentication failed: ${error.message}`, 'error');
+                document.getElementById('orderSection').style.display = 'none';
             }
         }
 
@@ -104,7 +120,7 @@
             }
 
             try {
-                const response = await fetch('/api/orders/checkout', {
+                const response = await fetch('/api/v1/orders/cart-checkout', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
@@ -114,18 +130,24 @@
                         addressId,
                         paymentMethod
                     })
-                });
-
-                if (!response.ok) throw new Error('Failed to create order');
+                })
+                
+                console.log(response);
 
                 const orderData = await response.json();
-                currentOrder = orderData.data;
+                if (!response.ok) throw new Error(orderData.message || 'Failed to create order');
 
-                document.getElementById('paymentSection').style.display = 'block';
-                document.getElementById('orderDetails').innerHTML = `
-                    <p>Order ID: ${currentOrder.id}</p>
-                    <p>Amount: ₹${currentOrder.amount/100}</p>
-                `;
+                // Store the Razorpay order details
+                currentOrder = orderData.data;
+                console.log('Order created:', currentOrder); // For debugging
+
+                if (paymentMethod === 'PREPAID') {
+                    document.getElementById('paymentSection').style.display = 'block';
+                    document.getElementById('orderDetails').innerHTML = `
+                        <p>Order ID: ${currentOrder.id}</p>
+                        <p>Amount: ₹${currentOrder.amount/100}</p>
+                    `;
+                }
                 showMessage('orderStatus', 'Order created successfully', 'success');
             } catch (error) {
                 showMessage('orderStatus', error.message, 'error');
@@ -139,15 +161,15 @@
             }
 
             const options = {
-                key: currentOrder.key_id,
-                amount: currentOrder.amount,
-                currency: currentOrder.currency,
+                key: currentOrder.key_id, // Using key from the API response
+                amount: currentOrder.amount, // Amount in paise
+                currency: currentOrder.currency || 'INR',
                 name: 'Your Store Name',
                 description: 'Test Transaction',
                 order_id: currentOrder.id,
                 handler: async function(response) {
                     try {
-                        const verifyResponse = await fetch('/api/payments/verify', {
+                        const verifyResponse = await fetch('/api/v1/payments/verify', {
                             method: 'POST',
                             headers: {
                                 'Authorization': `Bearer ${authToken}`,
@@ -179,11 +201,19 @@
                 }
             };
 
-            const rzp = new Razorpay(options);
-            rzp.on('payment.failed', function(response) {
-                showMessage('paymentStatus', 'Payment failed: ' + response.error.description, 'error');
-            });
-            rzp.open();
+            console.log('Payment Options:', options); // For debugging
+
+            try {
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function(response) {
+                    console.log('Payment failed:', response); // For debugging
+                    showMessage('paymentStatus', 'Payment failed: ' + response.error.description, 'error');
+                });
+                rzp.open();
+            } catch (error) {
+                console.error('Razorpay initialization error:', error);
+                showMessage('paymentStatus', 'Failed to initialize payment: ' + error.message, 'error');
+            }
         }
     </script>
 </body>

@@ -119,61 +119,6 @@ app.use('/api/v1/payments', paymentRoute);
 // update
 // remove
 
-let instance = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
-
-app.post('/create-order', async (req, res) => {
-  const { amount, currency = 'INR', receipt = 'order_rcptid_11' } = req.body;
-
-  try {
-    const response = await instance.orders.create({
-      amount: parseInt(amount), 
-      currency,
-      receipt
-    });
-    console.log(response);
-    res.json({
-      id: response.id,
-      currency: response.currency,
-      amount: response.amount,
-      key: process.env.RAZORPAY_KEY_ID
-    });
-  } catch (error) {
-    console.error('Razorpay Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-import crypto from 'crypto'
-
-app.post('/verify-payment', async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
-  
-  const body = razorpay_order_id + "|" + razorpay_payment_id;
-  
-  const expectedSignature = crypto
-    .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
-    .update(body.toString())
-    .digest('hex');
-
-  if (expectedSignature === razorpay_signature) {
-    res.json({ success: true, message: 'Payment verified successfully' });
-  } else {
-    res.status(400).json({ success: false, message: 'Invalid signature' });
-  }
-});
-
-
-app.post('/razorpay-webhook', async (req, res) => {
-  const { body } = req;
-  // console.log('Razorpay Webhook:', body);
-  const paymentPayload = body.payload
-  console.log(paymentPayload);
-  res.json({ success: true });
-})
-
 app.get('/razor-ui', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/razorpay.html'));
 });

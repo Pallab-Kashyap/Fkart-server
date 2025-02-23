@@ -20,7 +20,7 @@ const ProcessedWebhookEvent = sequelize.define(
         },
         event_data: {
         type: DataTypes.JSON,
-        allowNull: false,
+        allowNull: true,
         },
     },
     {

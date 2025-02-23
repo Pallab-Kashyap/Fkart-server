@@ -9,7 +9,9 @@ const razorpayInstance = new Razorpay({
 });
 
 const verifyWebhookSignature = (requestBody, signature) => {
-    const expectedSignature = crypto.HmacSHA256(requestBody, config.razorpay.webhook_secret).toString();
+    const hmac = crypto.createHmac('sha256', config.razorpay.webhook_secret);
+    hmac.update(requestBody);
+    const expectedSignature = hmac.digest('hex');
     return expectedSignature === signature;
 };
 

@@ -12,6 +12,7 @@ import ApiResponse from '../utils/APIResponse.js';
 import { Op } from 'sequelize';
 import sendOTP from '../utils/twilio.js';
 import { sequelize } from '../config/DBConfig.js';
+import { createCart } from './CartController.js';
 
 const createUser = asyncWrapper(async (req, res) => {
   const transaction = await sequelize.transaction();
@@ -67,6 +68,8 @@ const createUser = asyncWrapper(async (req, res) => {
       },
       { transaction }
     );
+
+    await createCart(user.id, transaction);
 
     await transaction.commit();
     ApiResponse.created(res, 'OTP has been sent to your mobile number', {
