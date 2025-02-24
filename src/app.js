@@ -24,7 +24,7 @@ import shippingRoute from './routes/shiprocketRoute.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 import Razorpay from 'razorpay';
 import reviewRoutes from './routes/reviewRoutes.js';
-// const addressRoutes = require('./routes/addressRoutes');
+import profileRoutes from './routes/profileRoutes.js';
 
 
 dotenv.config();
@@ -61,6 +61,7 @@ app.get('/', (req, res) => {
 app.use('/api/v1/auth', authRoute);
 
 // USER PROFILE
+app.use('/api/v1', profileRoutes);
 // get
 // update
 // table meta data

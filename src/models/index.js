@@ -16,6 +16,7 @@ import Category from './categoryModel.js';
 import Refund from './refundModel.js';
 import ShiprocketAuth from './shiprocketAuthModel.js';
 import ReturnShipment from './returnShipmentModel.js';
+import Favorite from './favrouiteModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -117,9 +118,21 @@ const sycnDB = async () => {
   // REVIEW
   User.hasMany(Review, { foreignKey: 'user_id', onDelete: 'CASCADE' });
   Review.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
-
+  
+  // Fix these associations
+  Review.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  Review.belongsTo(OrderItem, { foreignKey: 'order_item_id', onDelete: 'CASCADE' });
+  Review.belongsTo(ProductVariation, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
+  
   Product.hasMany(Review, { foreignKey: 'product_id', onDelete: 'CASCADE' });
   Review.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });
+
+  // FAVORITE
+  User.hasMany(Favorite, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  Favorite.belongsTo(User, { foreignKey: 'user_id', onDelete: 'CASCADE' });
+  
+  ProductVariation.hasMany(Favorite, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
+  Favorite.belongsTo(ProductVariation, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
 
   try {
     // await User.sync({ force: true });
@@ -159,4 +172,5 @@ export {
   SquareData,
   Category,
   Refund,
+  Favorite,
 };
