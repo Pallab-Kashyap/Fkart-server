@@ -1,4 +1,4 @@
-import { sequelize } from "../config/DBConfig";
+import { sequelize } from "../config/DBConfig.js";
 import { DataTypes } from "sequelize";
 
 const ReturnShipment = sequelize.define('ReturnShipment', {
@@ -8,11 +8,11 @@ const ReturnShipment = sequelize.define('ReturnShipment', {
         primaryKey: true,
     },
     shipment_id: {
-        type: DataTypes.STRING,
+        type: DataTypes.UUID,
         allowNull: true,
         references: {
             model: 'shipments',
-            key: 'shipment_id'
+            key: 'id'
         }
     },
     shiprocket_order_id: {
@@ -27,6 +27,11 @@ const ReturnShipment = sequelize.define('ReturnShipment', {
         type: DataTypes.STRING(100),
         allowNull: true,
     },
-})
+},
+{
+    timestamps: true,
+    tableName: "return_shipments"
+}
+)
 
 export default ReturnShipment;

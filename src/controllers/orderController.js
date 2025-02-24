@@ -14,7 +14,7 @@ import {
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiResponse from '../utils/APIResponse.js';
 import { sequelize } from '../config/DBConfig.js';
-import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS } from '../constants.js';
+import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS, REFUND_STATUS } from '../constants.js';
 import ApiError from '../utils/APIError.js';
 import { createRazorpayOrder, createRazorpayRefund } from './payment/razorpayPaymentController.js';
 import { cancelShiprocketOrder, shiprocketReturnOrder } from './shiprocketController.js';
@@ -307,6 +307,7 @@ export const returnOrder = asyncWrapper(async (req, res) => {
       include: [
         {
           model: OrderItem,
+          as: 'OrderItems',
           include: [
             {
               model: ProductVariation,
@@ -324,41 +325,41 @@ export const returnOrder = asyncWrapper(async (req, res) => {
     });
 
     if (!order) {
-      throw new ApiError(404, 'Order not found');
+      throw ApiError.badRequest('Order not found');
     }
 
 
     if (order.payment_method !== PAYMENT_METHOD.PREPAID) {
-      throw new ApiError(400, 'Only prepaid orders are eligible for return');
+      throw ApiError.badRequest('Only prepaid orders are eligible for return');
     }
 
 
     const shipment = order.Shipment;
     if (!shipment || shipment.status !== 'delivered') {
-      throw new ApiError(400, 'Only delivered orders can be returned');
+      throw ApiError.badRequest('Only delivered orders can be returned');
     }
 
 
     if (!isOrderReturnEligible(shipment.delivery_date)) {
-      throw new ApiError(400, 'Return window has expired (7 days from delivery)');
+      throw ApiError.badRequest('Return window has expired (7 days from delivery)');
     }
 
 
     const returnData = {
       sellerDetails: {
-        name: 'Your Store Name',
-        address: 'Your Store Address',
-        city: 'Your City',
-        state: 'Your State',
+        name: 'Store Name',
+        address: 'Store Address',
+        city: 'Store City',
+        state: 'Store State',
         country: 'India',
-        pincode: 'Your Pincode',
+        pincode: 'Pincode',
         email: 'store@email.com',
         phone: 'store phone'
       },
       customerDetails: {
         name: order.Address.name,
         address: order.Address.address,
-        address_2: order.Address.address_2,
+        address_2: order.Address.address_2 || '',
         city: order.Address.city,
         state: order.Address.state,
         country: order.Address.country,
@@ -437,6 +438,7 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
       include: [
         {
           model: OrderItem,
+          as: 'OrderItems',
           include: [
             {
               model: ProductVariation,
@@ -452,12 +454,12 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
     });
 
     if (!order) {
-      throw new ApiError(404, 'Order not found');
+      throw ApiError.badRequest('Order not found');
     }
 
 
     if (!isOrderCancellationEligible(order.createdAt)) {
-      throw new ApiError(400, 'Cancellation window has expired (2 days from order date)');
+      throw ApiError.badRequest('Cancellation window has expired (2 days from order date)');
     }
 
     
@@ -478,7 +480,7 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
         razorpay_refund_id: razorpayRefund.id,
         refund_amount: razorpayRefund.amount / 100,
         refund_reason: reason,
-        refund_status: razorpayRefund.status,
+        refund_status: REFUND_STATUS.PROCESSING,
         refund_date: new Date(razorpayRefund.created_at * 1000),
         transaction_id: razorpayRefund.payment_id,
       }, { transaction });
@@ -505,14 +507,11 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
 
   } catch (error) {
     await transaction.rollback();
+    console.log(error);
     throw error;
   }
 });
 
-// Amit's code-------------------------------------->>>>>>>>>>>>>>>>
-
-
-// Create order directly from product--------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>
 export const createOrderFromProduct = asyncWrapper(async (req, res) => {
   const {
     userId,
@@ -587,8 +586,6 @@ export const createOrderFromProduct = asyncWrapper(async (req, res) => {
   return ApiResponse.created(res, 'Order created successfully', completeOrder);
 });
 
-
-
 export const getOrderAndOrderItemsDetails = async (orderId) => {
   return await Order.find({
     where: {
@@ -596,6 +593,7 @@ export const getOrderAndOrderItemsDetails = async (orderId) => {
     },
     include: {
       model: OrderItem,
+      as: 'OrderItems',
       include: {
         model: Product,
         attributes: ['product_name'],
@@ -618,6 +616,7 @@ export const getOrders = asyncWrapper(async (req, res) => {
     include: [
       {
         model: OrderItem,
+        as: 'OrderItems',
         attributes: ['quantity'],
       },
       {
@@ -647,7 +646,7 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
   const  userId  = req.userId;
 
   if(orderId === undefined || orderId === null) { 
-    throw new ApiError.badRequest('Order ID is required');
+    throw ApiError.badRequest('Order ID is required');
   }
 
   const order = await Order.findOne({
@@ -655,13 +654,16 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
     include: [
       {
         model: OrderItem,
+        as: 'OrderItems',
         include: [
           {
             model: Product,
+            
             attributes: ['id', 'product_name', 'image_url'],
           },
           {
             model: ProductVariation,
+            as: 'product_variation',
             attributes: ['price', 'color', 'size'],
           }
         ]

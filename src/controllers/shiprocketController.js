@@ -12,6 +12,8 @@ import {
   Shipment,
   Address,
 } from '../models/index.js';
+import ApiResponse from '../utils/APIResponse.js';
+import ApiError from '../utils/APIError.js';
 
 export const createShiprocketOrder = async (orderId) => {
   try {
@@ -20,7 +22,7 @@ export const createShiprocketOrder = async (orderId) => {
       include: [
         {
           model: OrderItem,
-          as: 'orderItems',
+          as: 'OrderItems',
           include: [
             {
               model: ProductVariation,
@@ -65,7 +67,7 @@ export const createShiprocketOrder = async (orderId) => {
       billing_email: order.User.email,
       billing_phone: order.shipping_address.phone,
       shipping_is_billing: true,
-      order_items: order.orderItems.map((item) => ({
+      order_items: order.OrderItems.map((item) => ({
         name: item.product_variation.product.product_name,
         // sku: `${item.product_variation.product.id}-${item.product_variation.id}`,
         sku: `sku`,
@@ -81,10 +83,10 @@ export const createShiprocketOrder = async (orderId) => {
       total_discount: order?.discount || 0,
       sub_total: order.total_amount,
      
-      length: order.orderItems[0]?.product_variation?.length || 10,
-      breadth: order.orderItems[0]?.product_variation?.breadth || 10,
-      height: order.orderItems[0]?.product_variation?.height || 10,
-      weight: order.orderItems[0]?.product_variation?.weight || 1,
+      length: order.OrderItems[0]?.product_variation?.length || 10,
+      breadth: order.OrderItems[0]?.product_variation?.breadth || 10,
+      height: order.OrderItems[0]?.product_variation?.height || 10,
+      weight: order.OrderItems[0]?.product_variation?.weight || 1,
     };
 
     const token = await getShiprocketToken();
@@ -171,14 +173,14 @@ export const cancelShiprocketOrder = async ( shiprocket_order_id ) => {
  try {
    
    const shipment = await Shipment.findOne({
-     where: { order_id: orderId }
+     where: { shiprocket_order_id }
    });
  
    if (!shipment) {
-     throw new APIError('Shipment not found for this order', 404);
+     throw APIError.badRequest('Shipment not found for this order');
    }
  
-   const token = getShiprocketToken();
+   const token = await getShiprocketToken();
    const shipRocket = new ShipRocket(token);
    const cancelResponse = await shipRocket.cancelOrder([shiprocket_order_id]);
  
@@ -194,7 +196,7 @@ export const cancelShiprocketOrder = async ( shiprocket_order_id ) => {
  
    return true;
  } catch (error) {
-  throw new APIError.internal(error.message || 'Error cancelling order');
+  throw APIError.internal(error.message || 'Error cancelling order');
  }
 };
 
@@ -288,3 +290,36 @@ export const shiprocketReturnOrder = async (data) => {
     throw new APIError.internal(error.message || 'Error creating return order');
   }
 };
+
+export const shiprocketWebhook = async (req, res) => {
+  try {
+
+    const token = req.headers['x-api-key'];
+
+    if (!token) {
+      return APIResponse.success('Recieved webhook but no Shiprocket Webhook Secret');
+    }
+
+    if(!process.env.SHIPROCKET_WEBHOOK_SECRET) {
+      console.log('MISSING ENV FOR SHIPROCKET_WEBHOOK_SECRET');
+      return APIResponse.success('Recieved webhook but Shiprocket Webhook Secret not set');
+    }
+
+    if(token !== process.env.SHIPROCKET_WEBHOOK_SECRET) {
+      return APIResponse.success('Recieved webhook but Invalid Shiprocket Webhook Secret');
+    }
+
+    const data = req.body;
+    console.log("SHIPROCKET WEBHOOK DATA");
+    console.log(data);
+
+    return ApiResponse.success(res, 'webhook processed successfully');
+    
+  } catch (error) {
+    console.log(error);
+    if(error instanceof APIError && error.statusCode === 401) {
+      return ApiError.unauthorized('Invalid Shiprocket Webhook Secret');
+    }
+    return APIResponse.success('Recieved webhook but Error processing Shiprocket Webhook');
+  }
+}

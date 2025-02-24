@@ -13,11 +13,11 @@ import {
   ORDER_STATUS,
   PAYMENT_METHOD,
   PAYMENT_STATUS,
+  REFUND_STATUS,
 } from '../../constants.js';
 
 import { bulkDecrementStock } from '../orderController.js';
 import ProcessedWebhookEvent from '../../models/webhook.js';
-import { cloneDeep } from 'sequelize/lib/utils';
 import { sequelize } from '../../config/DBConfig.js';
 import { createShiprocketOrder } from '../shiprocketController.js';
 
@@ -78,7 +78,6 @@ const checkIfWebhookEventProcessed = async (event_id, event_type) => {
 const recordProcessedWebhookEvent = async (
   event_id,
   event_type,
-  transaction
 ) => {
   try {
     await ProcessedWebhookEvent.create(
@@ -86,7 +85,6 @@ const recordProcessedWebhookEvent = async (
         event_id,
         event_type,
       },
-      { transaction }
     );
   } catch (error) {
     throw new Error(error);
@@ -140,15 +138,7 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const isWebhookProcessed = await checkIfWebhookEventProcessed(
-      paymentData.id,
-      'payment.captured'
-    );
 
-    if (isWebhookProcessed) {
-      await transaction.rollback();
-      return;
-    }
 
     const paymentRecord = await Payment.findOne(
       { where: { razorpay_order_id: orderId }, include: [{ model: Order }] },
@@ -217,12 +207,6 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
       }
     );
 
-    await recordProcessedWebhookEvent(
-      paymentData.id,
-      'payment.captured',
-      transaction
-    );
-
     await transaction.commit();
 
     await createShiprocketOrder(paymentRecord.order_id)
@@ -239,14 +223,6 @@ const razorpayPaymentfailureWebhook = async (paymentData) => {
   const transaction = await sequelize.transaction();
 
   try {
-    const isWebhookProcessed = await checkIfWebhookEventProcessed(
-      paymentData.id,
-      'payment.failed'
-    );
-
-    if (isWebhookProcessed) {
-      return;
-    }
 
     const paymentRecord = await Payment.findOne(
       { where: { razorpay_order_id: orderId }, include: [{ model: Order }] },
@@ -289,12 +265,6 @@ const razorpayPaymentfailureWebhook = async (paymentData) => {
         where: { id: paymentRecord.order_id },
         transaction,
       }
-    );
-
-    await recordProcessedWebhookEvent(
-      paymentData.id,
-      'payment.failed',
-      transaction
     );
 
     await transaction.commit();
@@ -348,6 +318,16 @@ const razorpayWebhook = async (req, res) => {
     const event = req.body;
     const eventType = event.event;
     const paymentPayload = event.payload.payment.entity;
+
+    const isWebhookProcessed = await checkIfWebhookEventProcessed(
+      paymentPayload.id,
+      eventType
+    );
+
+    if (isWebhookProcessed) {
+      return ApiResponse.success('Webhook already has been processed')
+    }
+
     console.log(eventType);
     if (eventType === 'payment.captured') {
       await razorpayPaymentSuccessWebhook(paymentPayload);
@@ -397,6 +377,13 @@ const razorpayWebhook = async (req, res) => {
     } else {
       console.log(`Unhandled Webhook Event: ${eventType}`);
     }
+
+    await recordProcessedWebhookEvent(
+      paymentData.id,
+      eventType,
+    );
+
+    ApiResponse.success('Webhook processed successfully')
   } catch (error) {
     console.error('Error processing Razorpay webhook:', error);
     return ApiResponse.success(

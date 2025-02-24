@@ -20,6 +20,7 @@ import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
 import orderRoute from './routes/orderRoutes.js'
 import paymentRoute from './routes/paymentRoutes.js';
+import shippingRoute from './routes/shiprocketRoute.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 import Razorpay from 'razorpay';
 // const addressRoutes = require('./routes/addressRoutes');
@@ -96,6 +97,7 @@ app.use('/api/v1/payments', paymentRoute);
 // store
 
 // SHIPPING
+app.use('/api/v1/shipping', shippingRoute);
 // Shiprocket
 // create order in shiprocket
 // fetch order from shiprocket

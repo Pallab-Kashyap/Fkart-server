@@ -15,6 +15,7 @@ import ProductVariation from './productVariation.js';
 import Category from './categoryModel.js';
 import Refund from './refundModel.js';
 import ShiprocketAuth from './shiprocketAuthModel.js';
+import ReturnShipment from './returnShipmentModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -83,12 +84,12 @@ const sycnDB = async () => {
   Order.hasOne(Shipment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
   Order.hasMany(OrderItem, {
     foreignKey: 'order_id',
+    as: 'OrderItems',
     onDelete: 'CASCADE',
-    as: 'orderItems',
   });
 
   // ORDER ITEM
-  OrderItem.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE'});
+  OrderItem.belongsTo(Order, { foreignKey: 'order_id', as: 'Order', onDelete: 'CASCADE'});
   OrderItem.belongsTo(Product, {
     foreignKey: 'product_id',
     onDelete: 'CASCADE',
@@ -110,6 +111,8 @@ const sycnDB = async () => {
   // SHIPMENT
   Shipment.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
   Order.hasOne(Shipment, { foreignKey: 'order_id', onDelete: 'CASCADE' });
+  Shipment.hasOne(ReturnShipment, { foreignKey: 'shipment_id', onDelete: 'CASCADE'})
+  ReturnShipment.belongsTo(Shipment, { foreignKey: 'shipment_id', onDelete: "CASCADE"})
 
   // REVIEW
   User.hasMany(Review, { foreignKey: 'user_id', onDelete: 'CASCADE' });
