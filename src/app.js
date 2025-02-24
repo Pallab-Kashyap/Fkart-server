@@ -23,6 +23,7 @@ import paymentRoute from './routes/paymentRoutes.js';
 import shippingRoute from './routes/shiprocketRoute.js';
 import { fetchSquareCatalogList } from './controllers/squareController.js';
 import Razorpay from 'razorpay';
+import reviewRoutes from './routes/reviewRoutes.js';
 // const addressRoutes = require('./routes/addressRoutes');
 
 
@@ -116,6 +117,7 @@ app.use('/api/v1/shipping', shippingRoute);
 // order returned
 
 // REVIEW & FAVOURITE
+app.use('/api/v1/review', reviewRoutes);
 // add
 // fetch
 // update

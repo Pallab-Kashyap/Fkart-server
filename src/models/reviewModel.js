@@ -33,6 +33,14 @@ const Review = sequelize.define(
         max: 5,
       },
     },
+    product_variation_id: {  
+      type: DataTypes.UUID,
+      allowNull: false,
+      references: {
+        model: 'product_variations',
+        key: 'id'
+      },
+    },
     comment: {
       type: DataTypes.TEXT,
     },
@@ -42,5 +50,7 @@ const Review = sequelize.define(
     timestamps: true,
   }
 );
+
+
 
 export default Review;
