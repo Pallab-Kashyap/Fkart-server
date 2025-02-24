@@ -121,7 +121,7 @@ const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => {
       Order.order_status = ORDER_STATUS.PROCESSING;
       await order.save({ transaction });
       return { data: null };
-    } else {
+    } else if(paymentMethod.toLowerCase() === PAYMENT_METHOD.PREPAID){
       console.log('CREATING RAZORPAY ORDER');
       const razorpayOrder = await createRazorpayOrder(
         totalPrice*100,
@@ -455,6 +455,22 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
 
     if (!order) {
       throw ApiError.badRequest('Order not found');
+    }
+
+    if(order.order_status === ORDER_STATUS.CANCELLED){
+      throw ApiError.badRequest('Order already has been canceled')
+    }
+    else if( order.order_status === ORDER_STATUS.DELIVERED){
+      throw ApiError.badRequest('Order cannot be canceled after delivered')
+    }
+    else if ( order.order_status === ORDER_STATUS.FAILED){
+      throw ApiError.badRequest('Failed orders cannot be canceled')
+    }
+    else if ( order.order_status == ORDER_STATUS.RETURNED){
+      throw ApiError.badRequest("Order is already returned")
+    }
+    else if ( order.order_status === ORDER_STATUS.RETURN_INITIATED){
+      throw ApiError.badRequest("Return initiated and can't cancel now")
     }
 
 

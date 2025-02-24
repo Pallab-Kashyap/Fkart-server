@@ -379,7 +379,7 @@ const razorpayWebhook = async (req, res) => {
     }
 
     await recordProcessedWebhookEvent(
-      paymentData.id,
+      paymentPayload.id,
       eventType,
     );
 
