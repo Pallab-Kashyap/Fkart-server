@@ -173,11 +173,11 @@ export const updateCartItem = asyncWrapper(async (req, res) => {
   });
 
   if (!cartItem) {
-    throw ApiResponse.notFound("CartItem not found");
+    throw ApiError.notFound("CartItem not found");
   }
 
   if (quantity > cartItem.product_variation.stock_quantity) {
-    return ApiResponse.badRequest(res, "Exceeds available stock");
+    throw ApiError.badRequest("Exceeds available stock");
   }
 
   const priceDifference = cartItem.price * (quantity - cartItem.quantity);
