@@ -17,7 +17,7 @@ import { sequelize } from '../config/DBConfig.js';
 import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS, REFUND_STATUS } from '../constants.js';
 import ApiError from '../utils/APIError.js';
 import { createRazorpayOrder, createRazorpayRefund } from './payment/razorpayPaymentController.js';
-import { cancelShiprocketOrder, shiprocketReturnOrder } from './shiprocketController.js';
+import { cancelShiprocketOrder, createShiprocketOrder, shiprocketReturnOrder } from './shiprocketController.js';
 
 // Helper functions-------------------->>>>>>>>>>>>
 
@@ -101,7 +101,7 @@ const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => {
         user_id: userInfo.userId,
         total_amount: totalPrice,
         payment_method: paymentMethod.toLowerCase(),
-        order_status: PAYMENT_STATUS.PENDING,
+        order_status: ORDER_STATUS.PENDING,
         order_address_id: addressId,
         total_item: totalItems,
       },
@@ -118,9 +118,18 @@ const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => {
     
     if (paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) {
       console.log('UPDATING VARIATIONS ON COD');
-      Order.order_status = ORDER_STATUS.PROCESSING;
+      order.order_status = ORDER_STATUS.PROCESSING;
       await order.save({ transaction });
-      return { data: null };
+
+      await Payment.create({
+        user_id: userInfo.userId,
+        order_id: order.id,
+        payment_method: PAYMENT_METHOD.COD,
+        payment_status: PAYMENT_STATUS.PENDING,
+        amount: totalPrice
+      }, { transaction })
+      
+      return { order, shiprocket: true };
     } else if(paymentMethod.toLowerCase() === PAYMENT_METHOD.PREPAID){
       console.log('CREATING RAZORPAY ORDER');
       const razorpayOrder = await createRazorpayOrder(
@@ -142,7 +151,7 @@ const placeOrder = async (cartItems, orderDetails, userInfo, transaction) => {
         },
         { transaction: transaction }
       );
-      return razorpayOrder || null;
+      return {razorpayOrder};
     }
   } catch (error) {
     console.error('Error placing order:', error);
@@ -279,7 +288,7 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
       throw ApiError.badRequest('Cart is empty');
     }
 
-    const data = await placeOrder(
+    const { razorpayOrder, order, shiprocket } = await placeOrder(
       cart.CartItems,
       { paymentMethod, addressId },
       { userId },
@@ -288,10 +297,15 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
 
     await transaction.commit();
 
-    return ApiResponse.created(res, 'Order created successfully', data);
+    
+    ApiResponse.created(res, 'Order created successfully', razorpayOrder || null);
+    if(shiprocket){
+      await createShiprocketOrder(order.id);
+    }
   } catch (error) {
     await transaction.rollback();
-    throw error;
+    console.log(error);
+    ApiError.internal(`Someting went wrong, error: ${error.message}`);
   }
 });
 
@@ -483,7 +497,7 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
       await cancelShiprocketOrder(order.Shipment.shiprocket_order_id); 
     }
 
-    if (order.payment_method === PAYMENT_METHOD.PREPAID && order.Payment) {
+    if (order.payment_method === PAYMENT_METHOD.PREPAID && order.Payment && order.Payment.payment_status === PAYMENT_STATUS.SUCCESSFUL) {
       const razorpayRefund = await createRazorpayRefund(
         order.Payment.razorpay_payment_id,
         order.Payment.amount * 100
@@ -518,7 +532,8 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
 
     return ApiResponse.success(res, 'Order cancelled successfully', {
       order_id: orderId,
-      refund_status: order.payment_method === PAYMENT_METHOD.PREPAID ? 'processed' : 'not_applicable'
+      payment_status: order.Payment ? order.Payment.payment_status : 'Not paid yet',
+      refund_status: order.Payment && order.Payment.payment_status === PAYMENT_STATUS.SUCCESSFUL ? 'Processed' : 'Not applicable'
     });
 
   } catch (error) {
@@ -622,6 +637,10 @@ export const getOrders = asyncWrapper(async (req, res) => {
   const userId  = req.userId;
   const { status } = req.query;
 
+  if(status && !Object.values(ORDER_STATUS).includes(status)){
+    return ApiError.badRequest('status is not valid')
+  }
+
   const where = { user_id: userId };
   if (status) {
     where.order_status = status;
@@ -646,7 +665,6 @@ export const getOrders = asyncWrapper(async (req, res) => {
   const formattedOrders = orders.map(order => ({
     id: order.id,
     order_no: order.order_id,
-    created_at: order.createdAt,
     total_amount: order.total_amount,
     total_items: order.total_item,
     order_status: order.order_status,
@@ -680,7 +698,7 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
           {
             model: ProductVariation,
             as: 'product_variation',
-            attributes: ['price', 'color', 'size'],
+            attributes: ['id', 'price', 'color', 'size'],
           }
         ]
       },
@@ -700,24 +718,25 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
   });
 
   if (!order) {
-    throw new ApiError(404, 'Order not found');
+    throw ApiError.notFound('Order not found');
   }
 
   const formattedOrder = {
     order_details: {
+      id: orderId,
       order_no: order.order_id,
-      created_at: order.createdAt,
       order_status: order.order_status,
       total_amount: order.total_amount,
       total_items: order.total_item,
       order_date: order.createdAt,
     },
     items: order.OrderItems.map(item => ({
+      order_item_id: item.id,
       product_name: item.Product.product_name,
-      product_image: item.Product.image_url?.[0],
+      product_image: item.product_variation.image_url?.[0],
       variant: {
-        color: item.sku.color,
-        size: item.sku.size
+        color: item.product_variation?.color || "",
+        size: item.product_variation.size
       },
       quantity: item.quantity,
       price: item.selling_price,

@@ -1,10 +1,12 @@
 import express from 'express'
-import { razorpayWebhook, verifyPayment,  } from '../controllers/payment/razorpayPaymentController.js'
+import { getPaymetDetailsForOrder, razorpayWebhook, verifyPayment,  } from '../controllers/payment/razorpayPaymentController.js'
+import auth from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 
 router.post('/razorpay-webhook', express.raw({ type: 'application/json' }), razorpayWebhook); 
 router.post('/verify-payment', verifyPayment)
+router.post('/details', auth, getPaymetDetailsForOrder)
 
 export default router;

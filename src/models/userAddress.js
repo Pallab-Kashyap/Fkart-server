@@ -37,7 +37,7 @@ const Address = sequelize.define('Address', {
     }
   },
   address: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT,
     allowNull: false,
     validate: {
         notNull: {
@@ -46,7 +46,7 @@ const Address = sequelize.define('Address', {
     }
   },
   address_2:{
-    type: DataTypes.STRING
+    type: DataTypes.TEXT
   },
   city: {
     type: DataTypes.STRING(100),

@@ -16,7 +16,7 @@ import {
   REFUND_STATUS,
 } from '../../constants.js';
 
-import { bulkDecrementStock } from '../orderController.js';
+
 import ProcessedWebhookEvent from '../../models/webhook.js';
 import { sequelize } from '../../config/DBConfig.js';
 import { createShiprocketOrder } from '../shiprocketController.js';
@@ -132,7 +132,7 @@ const createRazorpayOrder = async (
 
 // Webhook helper functions-------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>
 
-const razorpayPaymentSuccessWebhook = async (paymentData) => {
+const razorpayPaymentSuccessWebhook = async (paymentData) => { 
   const orderId = paymentData.order_id;
   console.log('GOT SUCCESS PAYMENT');
   const transaction = await sequelize.transaction();
@@ -170,18 +170,17 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
     ) {
       await transaction.rollback();
 
-      console.error(
+      throw new Error(
         `Payment already completed for order ID: ${orderId}, payment ID: ${paymentData.id}`
       );
 
-      return;
     }
 
     console.log('udate');
     const up = await Payment.update(
       {
         payment_status: PAYMENT_STATUS.SUCCESSFUL,
-        razorpay_transaction_id: paymentData.acquirer_data?.bank_transaction_id,
+        razorpay_transaction_id: paymentData.acquirer_data?.bank_transaction_id || null,
         razorpay_payment_id: paymentData.id,
         payment_gateway_method: paymentData.method,
         email: paymentData.email,
@@ -199,7 +198,7 @@ const razorpayPaymentSuccessWebhook = async (paymentData) => {
 
     await Order.update(
       {
-        order_status: 'processing',
+        order_status: ORDER_STATUS.PROCESSING,
       },
       {
         where: { id: paymentRecord.order_id },
@@ -244,10 +243,10 @@ const razorpayPaymentfailureWebhook = async (paymentData) => {
       {
         payment_status: PAYMENT_STATUS.FAILED,
         // razorpay_transaction_id: paymentData.acquirer_data?.bank_transaction_id,
-        // razorpay_payment_id: paymentData.id,
-        // payment_gateway_method: paymentData.method,
-        // email: paymentData.email,
-        // contact: paymentData.contact,
+        razorpay_payment_id: paymentData.id,
+        payment_gateway_method: paymentData.method,
+        email: paymentData.email,
+        contact: paymentData.contact,
         // fee: paymentData.fee,
         // tax: paymentData.tax,
       },
@@ -393,9 +392,37 @@ const razorpayWebhook = async (req, res) => {
   }
 };
 
+const getPaymetDetailsForOrder = asyncWrapper( async ( req, res) => {
+  const { userId, body: { order_id }} = req
+
+  if(!order_id){
+    return ApiError.badRequest('order_id is a required field')
+  }
+
+  const paymentStatus = Order.findOne({
+    where: {
+      user_id: userId,
+      order_id
+    },
+    include: [
+      {
+        model: Payment,
+        attributes: ['payment_status', 'payment_method', 'payment_gateway_method', 'amount', 'currency', 'createdAt']
+      }
+    ]
+  })
+
+  if(!paymentStatus.Payment){
+    return ApiError.notFound('Payment no payment found')
+  }
+
+  ApiResponse.success(res, 'Payment data retrieved successfully', paymentStatus.Payment)
+})
+
 export {
   createRazorpayOrder,
   verifyPayment,
   razorpayWebhook,
   createRazorpayRefund,
+  getPaymetDetailsForOrder,
 };

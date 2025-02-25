@@ -1,4 +1,9 @@
-import { Category, Product, ProductVariation } from '../models/index.js';
+import {
+  Category,
+  Product,
+  ProductVariation,
+  Review,
+} from '../models/index.js';
 import { Op } from 'sequelize';
 import ApiError from '../utils/APIError.js';
 import ApiResponse from '../utils/APIResponse.js';
@@ -7,7 +12,6 @@ import { fetchSquareCatalogList } from './squareController.js';
 import { sequelize } from '../config/DBConfig.js';
 
 const buildFilterConditions = ({
-  category,
   minPrice,
   maxPrice,
   size,
@@ -15,10 +19,11 @@ const buildFilterConditions = ({
   search,
   inStock,
   rating,
-  brands,
+  brand
 }) => {
   const whereClause = {};
   const variationWhereClause = {};
+  const ratingWhereClause = {}
 
   if (search) {
     whereClause[Op.or] = [
@@ -27,9 +32,9 @@ const buildFilterConditions = ({
     ];
   }
 
-  if (inStock) whereClause.quantity = { [Op.gt]: 0 };
-  if (rating) whereClause.rating = { [Op.gte]: rating };
-  if (brands) whereClause.brand = { [Op.in]: brands.split(',') };
+  if (inStock) variationWhereClause.quantity = { [Op.gt]: 0 };
+  if (rating) ratingWhereClause.rating = { [Op.gte]: rating };
+  // if (brands) whereClause.brand = { [Op.in]: brands.split(',') };
 
   if (size) variationWhereClause.size = { [Op.in]: size.split(',') };
   if (color) variationWhereClause.color = { [Op.in]: color.split(',') };
@@ -40,7 +45,7 @@ const buildFilterConditions = ({
     if (maxPrice) variationWhereClause.price[Op.lte] = maxPrice;
   }
 
-  return { whereClause, variationWhereClause };
+  return { whereClause, variationWhereClause, ratingWhereClause };
 };
 
 const getCategoryByName = async (categoryName) => {
@@ -69,6 +74,18 @@ const getCategoryByName = async (categoryName) => {
 
   return [category.id];
 };
+
+const calculateRating = (data) => {
+  const numberOfReviews = data.Reviews?.length || 0;
+  const totalRatting = data.Reviews?.reduce((acc, curr) => acc + curr.rating, 0) || 0;
+  const rating = numberOfReviews > 0 ? (totalRatting / numberOfReviews).toFixed(2) : 0;
+
+  return  {
+    rating: parseFloat(rating),
+    numberOfReviews
+  }
+
+}
 
 const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
   const responseData = await fetchSquareCatalogList();
@@ -145,7 +162,7 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     limit = 10,
   } = req.query;
 
-  const { whereClause, variationWhereClause } = buildFilterConditions({
+  const { whereClause, variationWhereClause, ratingWhereClause } = buildFilterConditions({
     category,
     minPrice,
     maxPrice,
@@ -156,6 +173,7 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     rating,
     brands,
   });
+  
 
   if (category) {
     const categoryIds = await getCategoryByName(category);
@@ -181,11 +199,9 @@ const getAllProducts = asyncWrapper(async (req, res) => {
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
       {
-        model: Category,
-        as: 'category',
-        attributes: {
-          exclude: ['createdAt', 'updatedAt', 'square_category_id'],
-        },
+        model: Review,
+        where: ratingWhereClause,
+        attributes: ['rating'],
       },
     ],
     order: sortOrder,
@@ -202,6 +218,9 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     } else {
       data.variations = [];
     }
+
+    data.Reviews = calculateRating(data)
+
     return data;
   });
 
@@ -223,15 +242,24 @@ const getProductById = asyncWrapper(async (req, res) => {
         as: 'variations',
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
+      {
+        model: Review,
+        attributes: ['rating']
+      }
     ],
-    attributes: { exclude: ['createdAt', 'updatedAt', 'square_product_id'] },
+    attributes: { exclude: [ 'updatedAt', 'square_product_id'] },
   });
 
   if (!product) {
     throw new ApiError(404, 'Product not found');
   }
 
-  return ApiResponse.success(res, 'Product fetched successfully', product);
+  const productData = product.toJSON()
+
+  productData.Reviews = calculateRating(productData)
+  
+
+  return ApiResponse.success(res, 'Product fetched successfully', productData);
 });
 
 const getProductsByCategory = asyncWrapper(async (req, res) => {
@@ -288,12 +316,16 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
         as: 'category',
         attributes: ['id', 'name', 'parent_id'],
       },
+      {
+        model: Review,
+        attributes: ['rating']
+      }
     ],
     order: sortOrder,
     limit,
     offset: (page - 1) * limit,
     distinct: true,
-    attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] },
+    attributes: { exclude: ['square_product_id', 'updatedAt'] },
   });
 
   const processedProducts = products.rows.map((product) => {
@@ -303,6 +335,9 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
     } else {
       data.variations = [];
     }
+
+    data.Reviews = calculateRating(data)
+
     return data;
   });
 
@@ -330,7 +365,7 @@ const searchProducts = asyncWrapper(async (req, res) => {
     brands,
   } = req.query;
 
-  const { whereClause, variationWhereClause } = buildFilterConditions({
+  const { whereClause, variationWhereClause, ratingWhereClause } = buildFilterConditions({
     search: q,
     minPrice,
     maxPrice,
@@ -355,14 +390,19 @@ const searchProducts = asyncWrapper(async (req, res) => {
         where: Object.keys(variationWhereClause).length
           ? variationWhereClause
           : undefined,
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
+        attributes: { exclude: [ 'updatedAt'] },
       },
+      {
+        model: Review,
+        where: ratingWhereClause,
+        attributes: ['rating']
+      }
     ],
     order: sortOrder,
     limit,
     offset: (page - 1) * limit,
     distinct: true,
-    attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] },
+    attributes: { exclude: ['square_product_id',  'updatedAt'] },
   });
 
   const processedProducts = products.rows.map((product) => {
@@ -372,6 +412,9 @@ const searchProducts = asyncWrapper(async (req, res) => {
     } else {
       data.variations = [];
     }
+
+    data.Reviews = calculateRating(data)
+
     return data;
   });
 
@@ -422,10 +465,14 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
         as: 'variations',
         attributes: { exclude: ['createdAt', 'updatedAt'] },
       },
+      {
+        model: Review,
+        attributes: ['rating']
+      }
     ],
     order: sequelize.random(),
     limit: 4,
-    attributes: { exclude: ['square_product_id', 'createdAt', 'updatedAt'] },
+    attributes: { exclude: ['square_product_id', 'updatedAt'] },
   });
 
   const processedProducts = relatedProducts.map((product) => {
@@ -435,6 +482,8 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
     } else {
       data.variations = [];
     }
+
+    data.Reviews = calculateRating(data)
     return data;
   });
 
