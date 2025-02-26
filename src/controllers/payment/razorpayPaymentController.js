@@ -393,7 +393,8 @@ const razorpayWebhook = async (req, res) => {
 };
 
 const getPaymetDetailsForOrder = asyncWrapper( async ( req, res) => {
-  const { userId, body: { order_id }} = req
+  const userId = req.userId
+  const { order_id } = req.params
 
   if(!order_id){
     return ApiError.badRequest('order_id is a required field')

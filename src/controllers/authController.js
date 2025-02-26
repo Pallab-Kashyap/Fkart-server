@@ -19,6 +19,7 @@ const createUser = asyncWrapper(async (req, res) => {
   try {
     const { userName, email, password, phoneNumber } = req.body;
 
+    // Validate required fields
     if (!userName || !email || !phoneNumber || !password) {
       throw ApiError.badRequest(
         'userName, email, phoneNumber and password are required'
@@ -27,11 +28,11 @@ const createUser = asyncWrapper(async (req, res) => {
 
     const existingUser = await User.findOne({
       where: {
-        [Op.or]: [{ email: email }, { phone_number: phoneNumber }],
+        [Op.or]: [{ email }, { phone_number: phoneNumber }],
       },
       attributes: ['id'],
+      raw: true,
     });
-    console.log(existingUser);
 
     if (existingUser) {
       throw ApiError.badRequest(
@@ -39,8 +40,7 @@ const createUser = asyncWrapper(async (req, res) => {
       );
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10); // No need for separate salt generation
 
     const user = await User.create(
       {
@@ -53,25 +53,28 @@ const createUser = asyncWrapper(async (req, res) => {
     );
 
     const OTP = generateOTP();
+
     const isOTPSent = await sendOTP(OTP, phoneNumber);
 
     if (!isOTPSent) {
-      await user.destroy();
       throw ApiError.internal('Failed to send OTP');
     }
 
-    await OTPVerification.create(
-      {
-        user_id: user.id,
-        otp_code: OTP,
-        expiration_time: new Date(Date.now() + 10 * 60 * 1000),
-      },
-      { transaction }
-    );
+    await Promise.all([
+      OTPVerification.create(
+        {
+          user_id: user.id,
+          otp_code: OTP,
+          expiration_time: new Date(Date.now() + 10 * 60 * 1000),
+        },
+        { transaction }
+      ),
 
-    await createCart(user.id, transaction);
+      createCart(user.id, transaction),
+    ]);
 
     await transaction.commit();
+
     ApiResponse.created(res, 'OTP has been sent to your mobile number', {
       OTP,
     });

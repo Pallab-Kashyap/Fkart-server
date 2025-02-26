@@ -61,7 +61,7 @@ const createOrderItems = async (items, transaction) => {
       const productName = variation
         ? variation.product.product_name
         : `Product Variation ID ${item.product_variation_id}`;
-      throw new ApiError(400, `${productName} is out of stock or insufficient quantity available`);
+      throw ApiError.badRequest(`${productName} is out of stock or insufficient quantity available`);
     }
 
     const totalItemPrice = variation.price * item.quantity;
@@ -305,7 +305,7 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
   } catch (error) {
     await transaction.rollback();
     console.log(error);
-    ApiError.internal(`Someting went wrong, error: ${error.message}`);
+   throw error
   }
 });
 
@@ -712,7 +712,13 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
       },
       {
         model: Shipment,
-        attributes: ['tracking_url', 'delivery_date', 'courier_name', 'status']
+        attributes: ['tracking_url', 'delivery_date', 'courier_name', 'status'],
+        include: [
+          {
+            model: Refund,
+            attributes: ['refund_status', 'refund_amount',]
+          }
+        ]
       }
     ]
   });
@@ -761,7 +767,8 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
     payment_details: {
       method: order.Payment.payment_method,
       status: order.Payment.payment_status,
-      amount: order.Payment.amount
+      amount: order.Payment.amount,
+      refund: order.Payment.Refund
     }
   };
 

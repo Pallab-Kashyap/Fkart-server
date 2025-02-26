@@ -7,6 +7,5 @@ const router = express.Router();
 
 router.post('/razorpay-webhook', express.raw({ type: 'application/json' }), razorpayWebhook); 
 router.post('/verify-payment', verifyPayment)
-router.post('/details', auth, getPaymetDetailsForOrder)
 
 export default router;
