@@ -1,81 +1,69 @@
 import { Favorite, ProductVariation, Product } from '../models/index.js';
+import asyncWrapper from '../utils/asyncWrapper.js';
+import ApiResponse from '../utils/APIResponse.js';
+import ApiError from '../utils/APIError.js';
 
-// Add to favorites
-export const addToFavorites = async (req, res) => {
-  try {
-    const { user_id, product_variation_id } = req.body;
+export const addToFavorites = asyncWrapper(async (req, res) => {
+  const { product_variation_id } = req.body;
+  const user_id = req.userId;
 
-    const existing = await Favorite.findOne({
-      where: { user_id, product_variation_id }
-    });
+  const existing = await Favorite.findOne({
+    where: { user_id, product_variation_id }
+  });
 
-    if (existing) {
-      return res.status(400).json({ message: 'Item already in favorites' });
-    }
-
-    const favorite = await Favorite.create({
-      user_id,
-      product_variation_id
-    });
-
-    res.status(201).json(favorite);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  if (existing) {
+    throw ApiError.badRequest('Item already in favorites');
   }
-};
 
-// Get user's favorites
-export const getFavorites = async (req, res) => {
-  try {
-    const { user_id } = req.params;
+  const favorite = await Favorite.create({
+    user_id,
+    product_variation_id
+  });
 
-    const favorites = await Favorite.findAll({
-      where: { user_id },
+  return ApiResponse.success(res, 'Added to favorites successfully', favorite);
+});
+
+export const getFavorites = asyncWrapper(async (req, res) => {
+  const user_id = req.userId;
+
+  const favorites = await Favorite.findAll({
+    where: { user_id },
+    include: [{
+      model: ProductVariation,
       include: [{
-        model: ProductVariation,
-        include: [{
-          model: Product,
-          as: 'product'
-        }]
-      }]
-    });
+        model: Product,
+        as: 'product',
+        attributes: ['id', 'product_name', 'image_url']
+      }],
+      attributes: ['id', 'size', 'color', 'price']
+    }]
+  });
 
-    res.status(200).json(favorites);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  return ApiResponse.success(res, 'Favorites retrieved successfully', favorites);
+});
+
+export const removeFromFavorites = asyncWrapper(async (req, res) => {
+  const { product_variation_id } = req.params;
+  const user_id = req.userId;
+
+  const deleted = await Favorite.destroy({
+    where: { user_id, product_variation_id }
+  });
+
+  if (!deleted) {
+    throw ApiError.notFound('Favorite not found');
   }
-};
 
-// Remove from favorites
-export const removeFromFavorites = async (req, res) => {
-  try {
-    const { user_id, product_variation_id } = req.params;
+  return ApiResponse.success(res, 'Removed from favorites successfully');
+});
 
-    const deleted = await Favorite.destroy({
-      where: { user_id, product_variation_id }
-    });
+export const checkFavorite = asyncWrapper(async (req, res) => {
+  const { product_variation_id } = req.params;
+  const user_id = req.userId;
 
-    if (!deleted) {
-      return res.status(404).json({ message: 'Favorite not found' });
-    }
+  const favorite = await Favorite.findOne({
+    where: { user_id, product_variation_id }
+  });
 
-    res.status(200).json({ message: 'Removed from favorites' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// Check if item is favorited
-export const checkFavorite = async (req, res) => {
-  try {
-    const { user_id, product_variation_id } = req.params;
-
-    const favorite = await Favorite.findOne({
-      where: { user_id, product_variation_id }
-    });
-
-    res.status(200).json({ isFavorite: !!favorite });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+  return ApiResponse.success(res, 'Favorite status retrieved', { isFavorite: !!favorite });
+});
