@@ -69,8 +69,7 @@ export const createShiprocketOrder = async (orderId) => {
       shipping_is_billing: true,
       order_items: order.OrderItems.map((item) => ({
         name: item.product_variation.product.product_name,
-        // sku: `${item.product_variation.product.id}-${item.product_variation.id}`,
-        sku: `sku`,
+        sku: `${item.product_variation.id.slice(-6)}`,
         units: item.quantity,
         selling_price: item.selling_price,
         size: item.product_variation.size,
@@ -92,7 +91,6 @@ export const createShiprocketOrder = async (orderId) => {
     const token = await getShiprocketToken();
     const shipRocket = new ShipRocket(token);
 
-   
     let step = 0;
     let responseData = {};
     let shiprocketOrderResponse; 
@@ -164,8 +162,8 @@ export const createShiprocketOrder = async (orderId) => {
     }
 
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error(error);
+    return
   }
 };
 

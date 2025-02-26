@@ -48,6 +48,7 @@ const sycnDB = async () => {
     foreignKey: 'product_id',
     as: 'variations',
   });
+  Product.hasMany(Review, { foreignKey: "product_id", onDelete: "CASCADE"})
 
   ProductVariation.belongsTo(Product, {
     foreignKey: 'product_id',
@@ -123,6 +124,7 @@ const sycnDB = async () => {
   Review.belongsTo(Order, { foreignKey: 'order_id', onDelete: 'CASCADE' });
   Review.belongsTo(OrderItem, { foreignKey: 'order_item_id', onDelete: 'CASCADE' });
   Review.belongsTo(ProductVariation, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
+  Review.belongsTo(Product, { foreignKey: 'product_id', onDelete: "CASCADE"})
   
   Product.hasMany(Review, { foreignKey: 'product_id', onDelete: 'CASCADE' });
   Review.belongsTo(Product, { foreignKey: 'product_id', onDelete: 'CASCADE' });

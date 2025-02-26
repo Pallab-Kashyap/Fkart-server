@@ -49,6 +49,7 @@ const Payment = sequelize.define(
     },
     currency: {
       type: DataTypes.STRING(3),
+      defaultValue: 'INR',
       allowNull: false,
     },
     email: {

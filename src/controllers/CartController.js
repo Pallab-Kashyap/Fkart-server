@@ -9,16 +9,14 @@ const calculateTotalPrice = (cartItems) => {
 
 // Create a new Cart
 export const createCart = async (userId, transaction) => {
-  try {
-    await Cart.findOrCreate({
-      where: { user_id: userId },
-      defaults: { status: 'active' },
-      transaction
-    });
-  } catch (error) {
-    console.log(error);
-    throw ApiError.internal('Error creating cart'); // Fixed: removed 'new' keyword
-  }
+  const [cart, created] = await Cart.findOrCreate({
+    where: { user_id: userId },
+    defaults: { status: 'active' },
+    transaction,
+    raw: true,
+  });
+
+  return created ? cart : null;
 };
 
 // Fetch cart or get cart items
