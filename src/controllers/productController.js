@@ -19,11 +19,11 @@ const buildFilterConditions = ({
   search,
   inStock,
   rating,
-  brand
+  brand,
 }) => {
   const whereClause = {};
   const variationWhereClause = {};
-  const ratingWhereClause = {}
+  const ratingWhereClause = {};
 
   if (search) {
     whereClause[Op.or] = [
@@ -77,15 +77,16 @@ const getCategoryByName = async (categoryName) => {
 
 const calculateRating = (data) => {
   const numberOfReviews = data.Reviews?.length || 0;
-  const totalRatting = data.Reviews?.reduce((acc, curr) => acc + curr.rating, 0) || 0;
-  const rating = numberOfReviews > 0 ? (totalRatting / numberOfReviews).toFixed(2) : 0;
+  const totalRatting =
+    data.Reviews?.reduce((acc, curr) => acc + curr.rating, 0) || 0;
+  const rating =
+    numberOfReviews > 0 ? (totalRatting / numberOfReviews).toFixed(2) : 0;
 
-  return  {
+  return {
     rating: parseFloat(rating),
-    numberOfReviews
-  }
-
-}
+    numberOfReviews,
+  };
+};
 
 const fetchAndStoreProductFromSquare = asyncWrapper(async (req, res) => {
   const responseData = await fetchSquareCatalogList();
@@ -162,18 +163,18 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     limit = 10,
   } = req.query;
 
-  const { whereClause, variationWhereClause, ratingWhereClause } = buildFilterConditions({
-    category,
-    minPrice,
-    maxPrice,
-    size,
-    color,
-    search,
-    inStock,
-    rating,
-    brands,
-  });
-  
+  const { whereClause, variationWhereClause, ratingWhereClause } =
+    buildFilterConditions({
+      category,
+      minPrice,
+      maxPrice,
+      size,
+      color,
+      search,
+      inStock,
+      rating,
+      brands,
+    });
 
   if (category) {
     const categoryIds = await getCategoryByName(category);
@@ -202,6 +203,7 @@ const getAllProducts = asyncWrapper(async (req, res) => {
         model: Review,
         where: ratingWhereClause,
         attributes: ['rating'],
+        required: false,
       },
     ],
     order: sortOrder,
@@ -219,7 +221,9 @@ const getAllProducts = asyncWrapper(async (req, res) => {
       data.variations = [];
     }
 
-    data.Reviews = calculateRating(data)
+    if (data.Review) {
+      data.Reviews = calculateRating(data);
+    }
 
     return data;
   });
@@ -244,20 +248,22 @@ const getProductById = asyncWrapper(async (req, res) => {
       },
       {
         model: Review,
-        attributes: ['rating']
-      }
+        attributes: ['rating'],
+        required: false,
+      },
     ],
-    attributes: { exclude: [ 'updatedAt', 'square_product_id'] },
+    attributes: { exclude: ['updatedAt', 'square_product_id'] },
   });
 
   if (!product) {
     throw new ApiError(404, 'Product not found');
   }
 
-  const productData = product.toJSON()
+  const productData = product.toJSON();
 
-  productData.Reviews = calculateRating(productData)
-  
+  if (data.Review) {
+    data.Reviews = calculateRating(data);
+  }
 
   return ApiResponse.success(res, 'Product fetched successfully', productData);
 });
@@ -315,11 +321,12 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
         model: Category,
         as: 'category',
         attributes: ['id', 'name', 'parent_id'],
+        required: false,
       },
       {
         model: Review,
-        attributes: ['rating']
-      }
+        attributes: ['rating'],
+      },
     ],
     order: sortOrder,
     limit,
@@ -336,8 +343,9 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
       data.variations = [];
     }
 
-    data.Reviews = calculateRating(data)
-
+    if (data.Review) {
+      data.Reviews = calculateRating(data);
+    }
     return data;
   });
 
@@ -365,16 +373,17 @@ const searchProducts = asyncWrapper(async (req, res) => {
     brands,
   } = req.query;
 
-  const { whereClause, variationWhereClause, ratingWhereClause } = buildFilterConditions({
-    search: q,
-    minPrice,
-    maxPrice,
-    size,
-    color,
-    inStock,
-    rating,
-    brands,
-  });
+  const { whereClause, variationWhereClause, ratingWhereClause } =
+    buildFilterConditions({
+      search: q,
+      minPrice,
+      maxPrice,
+      size,
+      color,
+      inStock,
+      rating,
+      brands,
+    });
 
   const sortOrder = sort.split(',').map((field) => {
     const [name, direction = order] = field.split(':');
@@ -390,19 +399,20 @@ const searchProducts = asyncWrapper(async (req, res) => {
         where: Object.keys(variationWhereClause).length
           ? variationWhereClause
           : undefined,
-        attributes: { exclude: [ 'updatedAt'] },
+        attributes: { exclude: ['updatedAt'] },
       },
       {
         model: Review,
         where: ratingWhereClause,
-        attributes: ['rating']
-      }
+        attributes: ['rating'],
+        required: false,
+      },
     ],
     order: sortOrder,
     limit,
     offset: (page - 1) * limit,
     distinct: true,
-    attributes: { exclude: ['square_product_id',  'updatedAt'] },
+    attributes: { exclude: ['square_product_id', 'updatedAt'] },
   });
 
   const processedProducts = products.rows.map((product) => {
@@ -413,8 +423,9 @@ const searchProducts = asyncWrapper(async (req, res) => {
       data.variations = [];
     }
 
-    data.Reviews = calculateRating(data)
-
+    if (data.Review) {
+      data.Reviews = calculateRating(data);
+    }
     return data;
   });
 
@@ -467,8 +478,9 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
       },
       {
         model: Review,
-        attributes: ['rating']
-      }
+        attributes: ['rating'],
+        required: false
+      },
     ],
     order: sequelize.random(),
     limit: 4,
@@ -483,7 +495,9 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
       data.variations = [];
     }
 
-    data.Reviews = calculateRating(data)
+    if (data.Review) {
+      data.Reviews = calculateRating(data);
+    }    
     return data;
   });
 

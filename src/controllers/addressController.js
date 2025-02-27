@@ -1,58 +1,71 @@
-import Address  from '../models/userAddress.js';
+import Address from '../models/userAddress.js';
 import { sequelize } from '../config/DBConfig.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiResponse from '../utils/APIResponse.js';
 import ApiError from '../utils/APIError.js';
 
-// create a nwe address  
+// create a nwe address
 export const createAddress = asyncWrapper(async (req, res) => {
   const userId = req.userId;
- req.body.user_id = userId;
-const existingAddresses = await Address.findAll({ where: { user_id: userId },attributes:{exclude:["user_id","createdAt","updatedAt"]} });
+  req.body.user_id = userId;
+  const existingAddresses = await Address.findAll({
+    where: { user_id: userId },
+    attributes: { exclude: ['user_id', 'createdAt', 'updatedAt'] },
+  });
   if (existingAddresses.length === 0) {
-    req.body.isDefault = true; 
+    req.body.isDefault = true;
   }
   // Create the new address
   const address = await Address.create(req.body);
-  return ApiResponse.created(res, "Address created successfully", address);
+  const addressData = address.toJSON();
+
+  delete addressData.user_id;
+  delete addressData.isDeleted;
+
+  return ApiResponse.created(res, 'Address created successfully', addressData);
 });
 
-//get address 
+//get address
 export const getAddresses = asyncWrapper(async (req, res) => {
   const userId = req.userId;
-  const addresses = await Address.findAll({ 
-    where: { 
+  const addresses = await Address.findAll({
+    where: {
       user_id: userId,
-      isDeleted: false 
-    }
+      isDeleted: false,
+    },
+    attributes: { exclude: ['user_id', 'isDeleted'] },
   });
-  return ApiResponse.success(res, "Addresses fetched successfully", addresses);
+  return ApiResponse.success(res, 'Addresses fetched successfully', addresses);
 });
 // get addresses
 export const updateAddress = asyncWrapper(async (req, res) => {
   const { id } = req.params;
-  const [updated] = await Address.update(req.body, { where: { id } });
+  const [updated, updatedAddress] = await Address.update(req.body, { where: { id }, returning: true, attributes: { exclude: ['user_id', 'isDeleted']} });
   if (!updated) {
     throw ApiError.badRequest('Address not found');
   }
-  const updatedAddress = await Address.findByPk(id);
-  return ApiResponse.success(res, 'Address updated successfully', updatedAddress);
+  // const updatedAddress = await Address.findByPk(id);
+  return ApiResponse.success(
+    res,
+    'Address updated successfully',
+    updatedAddress[0]
+  );
 });
 
 // DElete adddress
 export const deleteAddress = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const userId = req.userId;
-  
+
   const updated = await Address.update(
     { isDeleted: true },
     { where: { id, user_id: userId } }
   );
 
   if (updated[0] > 0) {
-    return ApiResponse.success(res, "Address deleted successfully");
+    return ApiResponse.success(res, 'Address deleted successfully');
   } else {
-    return ApiResponse.notFound(res, "Address not found");
+    return ApiResponse.notFound(res, 'Address not found');
   }
 });
 
@@ -60,7 +73,7 @@ export const deleteAddress = asyncWrapper(async (req, res) => {
 export const setDefaultAddress = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const userId = req.userId;
-   await sequelize.transaction(async (t) => {
+  await sequelize.transaction(async (t) => {
     // Update the previous default address to false for the current user
     await Address.update(
       { isDefault: false },
@@ -77,5 +90,5 @@ export const setDefaultAddress = asyncWrapper(async (req, res) => {
     }
   });
 
-  return ApiResponse.success(res, "Default address updated successfully");
+  return ApiResponse.success(res, 'Default address updated successfully');
 });
