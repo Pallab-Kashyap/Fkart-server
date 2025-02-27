@@ -9,6 +9,7 @@ import cors from 'cors';
 import sycnDB, { ProductVariation } from './models/index.js';
 import Product from './models/productModel.js';
 import { seedSampleData } from './utils/seedData.js';
+import favoriteRoutes from './routes/favrouiteRoutes.js';
 
 
 //Routes
@@ -119,6 +120,7 @@ app.use('/api/v1/shipping', shippingRoute);
 
 // REVIEW & FAVOURITE
 app.use('/api/v1/review', reviewRoutes);
+app.use('/api/v1/favorites', favoriteRoutes);
 // add
 // fetch
 // update
