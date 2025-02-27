@@ -4,28 +4,34 @@ import ApiError from './APIError.js';
 
 dotenv.config();
 
-if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
-  throw new ApiError(500, 'Missing JWT secrets');
-}
+const checkENV = () => {
+  if (!process.env.ACCESS_TOKEN_SECRET || !process.env.REFRESH_TOKEN_SECRET) {
+    throw ApiError.internal('Missing JWT secrets');
+  }
+  return
+};
 
 const generateAccessToken = (userId) => {
+  checkENV()
   return jwt.sign({ userId }, process.env.ACCESS_TOKEN_SECRET, {
     algorithm: 'HS256',
-    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
+    expiresIn: '1d',
   });
 };
 
 const generateRefreshToken = (userId) => {
+  checkENV()
   return jwt.sign({ userId }, process.env.REFRESH_TOKEN_SECRET, {
     algorithm: 'HS256',
-    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
+    expiresIn: '15d',
   });
 };
 
 const generateToken = (data, expiry) => {
+  checkENV()
   return jwt.sign(data, process.env.ACCESS_TOKEN_SECRET, {
     algorithm: 'HS256',
-    expiresIn: expiry || process.env.ACCESS_TOKEN_EXPIRES_IN,
+    expiresIn: expiry || '1d',
   });
 };
 

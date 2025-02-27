@@ -33,7 +33,7 @@ export const updateAddress = asyncWrapper(async (req, res) => {
   const { id } = req.params;
   const [updated] = await Address.update(req.body, { where: { id } });
   if (!updated) {
-    throw new ApiError(404, 'Address not found');
+    throw ApiError.badRequest('Address not found');
   }
   const updatedAddress = await Address.findByPk(id);
   return ApiResponse.success(res, 'Address updated successfully', updatedAddress);
@@ -73,7 +73,7 @@ export const setDefaultAddress = asyncWrapper(async (req, res) => {
     );
 
     if (affectedRows === 0) {
-      throw new Error('Address not found or does not belong to user');
+      throw ApiError.badRequest('Address not found or does not belong to user');
     }
   });
 

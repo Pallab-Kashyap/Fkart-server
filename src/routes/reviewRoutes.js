@@ -5,16 +5,15 @@ import {
   updateReview,
   getUserReviews,
   deleteReview
-  // cc
 } from '../controllers/reviewController.js';
-import authMiddleware from '../middlewares/authMiddleware.js';
+import auth from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
-// router.post('/create', authMiddleware, createReview);
-router.post('/create', authMiddleware, createReview); 
+
+router.post('/create', auth, createReview); 
 router.get('/products/:product_id', getAllReviews);
-router.put('/update/:id', authMiddleware, updateReview);
-router.get('/me', authMiddleware, getUserReviews);
-router.delete('/delete/:id', authMiddleware, deleteReview);
+router.put('/update/:id', auth, updateReview);
+router.get('/me', auth, getUserReviews);
+router.delete('/delete/:id', auth, deleteReview);
 
 export default router;

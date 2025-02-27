@@ -19,7 +19,6 @@ const createUser = asyncWrapper(async (req, res) => {
   try {
     const { userName, email, password, phoneNumber } = req.body;
 
-    // Validate required fields
     if (!userName || !email || !phoneNumber || !password) {
       throw ApiError.badRequest(
         'userName, email, phoneNumber and password are required'
@@ -40,7 +39,7 @@ const createUser = asyncWrapper(async (req, res) => {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10); // No need for separate salt generation
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await User.create(
       {
@@ -83,7 +82,7 @@ const createUser = asyncWrapper(async (req, res) => {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(500, error.message);
+    throw ApiError.internal(error?.message | 'Something went wrong');
   }
 });
 
@@ -136,7 +135,7 @@ const login = asyncWrapper(async (req, res) => {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(500, error.message);
+    throw ApiError.internal(error?.message || 'something went wrong');
   }
 });
 
@@ -175,32 +174,46 @@ const verifyOTP = asyncWrapper(async (req, res) => {
     }
   }
 
-  await OTPVerification.update(
-    { is_verified: true },
-    {
-      where: {
-        user_id: user.id,
-        otp_code: OTP,
+  const transaction = await sequelize.transaction();
+
+  try {
+    await OTPVerification.update(
+      { is_verified: true },
+      {
+        where: {
+          user_id: user.id,
+          otp_code: OTP,
+        },
       },
+      { transaction }
+    );
+
+    const accessToken = generateAccessToken(user.id);
+    const refreshToken = generateRefreshToken(user.id);
+
+    await User.update(
+      { refresh_token: refreshToken },
+      { where: { id: user.id } },
+      { transaction }
+    );
+    return ApiResponse.success(res, 'OTP verified successfully', {
+      accessToken,
+      refreshToken,
+    });
+  } catch (error) {
+    await transaction.rollback();
+
+    if (error instanceof ApiError) {
+      throw error;
     }
-  );
 
-  const accessToken = generateAccessToken(user.id);
-  const refreshToken = generateRefreshToken(user.id);
-
-  await User.update(
-    { refresh_token: refreshToken },
-    { where: { id: user.id } }
-  );
-
-  ApiResponse.success(res, 'OTP verified successfully', {
-    accessToken,
-    refreshToken,
-  });
+    throw ApiError.internal(error.message || 'Something went wrong');
+  }
 });
 
 const resendOTP = asyncWrapper(async (req, res) => {
   const { phoneNumber } = req.body;
+  const userId = req.userId;
 
   if (!phoneNumber) {
     throw ApiError.badRequest('Phone number is required');
@@ -260,8 +273,7 @@ const changePassword = asyncWrapper(async (req, res) => {
     throw ApiError.badRequest('Invalid current password');
   }
 
-  const salt = await bcrypt.genSalt(10);
-  const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+  const hashedNewPassword = await bcrypt.hash(newPassword, 10);
 
   await user.update(
     {
@@ -274,7 +286,7 @@ const changePassword = asyncWrapper(async (req, res) => {
     }
   );
 
-  res.status(200).json({ message: 'Password updated successfully' });
+  return ApiResponse.success(res, 'Password changed successfully');
 });
 
 const refreshAccessToken = asyncWrapper(async (req, res) => {
@@ -302,7 +314,7 @@ const refreshAccessToken = asyncWrapper(async (req, res) => {
 
   const accessToken = generateAccessToken(userId);
 
-  res.status(200).json({ accessToken });
+  return ApiResponse.success(res, '', { accessToken });
 });
 
 const logout = asyncWrapper(async (req, res) => {
@@ -315,7 +327,7 @@ const logout = asyncWrapper(async (req, res) => {
     }
   );
 
-  res.status(200).json({ message: 'Logged out successfully' });
+  return ApiResponse.success(res, 'Logged out successfully');
 });
 
 export {
