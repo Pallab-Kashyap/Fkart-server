@@ -302,8 +302,8 @@ const getProductById = asyncWrapper(async (req, res) => {
 
   const productData = product.toJSON();
 
-  if (data.Review) {
-    data.Reviews = calculateRating(data);
+  if (productData.Review) {
+    productData.Reviews = calculateRating(productData);
   }
 
   return ApiResponse.success(res, 'Product fetched successfully', productData);
