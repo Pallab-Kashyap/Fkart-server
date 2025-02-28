@@ -32,8 +32,11 @@ const buildFilterConditions = ({
     ];
   }
 
-  if (inStock) variationWhereClause.quantity = { [Op.gt]: 0 };
-  if (rating) ratingWhereClause.rating = { [Op.gte]: rating };
+  if (inStock) variationWhereClause.stock_quantity = { [Op.gt]: 0 };
+  if (rating) {
+    let intRating = Math.floor(rating);
+    ratingWhereClause.rating = { [Op.gte]: intRating };
+  }
   // if (brands) whereClause.brand = { [Op.in]: brands.split(',') };
 
   if (size) variationWhereClause.size = { [Op.in]: size.split(',') };
@@ -157,15 +160,14 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     inStock,
     rating,
     brands,
-    sort = 'createdAt',
-    order = 'DESC',
+    sort,
+    order, 
     page = 1,
     limit = 10,
   } = req.query;
 
   const { whereClause, variationWhereClause, ratingWhereClause } =
     buildFilterConditions({
-      category,
       minPrice,
       maxPrice,
       size,
@@ -183,55 +185,94 @@ const getAllProducts = asyncWrapper(async (req, res) => {
     }
   }
 
-  const sortOrder = sort.split(',').map((field) => {
-    const [name, direction = order] = field.split(':');
-    return [name, direction.toUpperCase()];
-  });
+  let sortOrder = [sequelize.random()];
+  if (sort) {
+    sortOrder = sort.split(',').map((field) => {
+      const [name, direction = order] = field.split(':');
+      return [name, direction.toUpperCase()];
+    });
+  }
 
-  const products = await Product.findAndCountAll({
-    where: whereClause,
+  let isReviewRequired = false;
+
+  if (rating) {
+    isReviewRequired = true;
+  }
+
+  const variations = await ProductVariation.findAndCountAll({
+    where: variationWhereClause,
     include: [
       {
-        model: ProductVariation,
-        as: 'variations',
-        where: Object.keys(variationWhereClause).length
-          ? variationWhereClause
-          : undefined,
-        attributes: { exclude: ['createdAt', 'updatedAt'] },
-      },
-      {
-        model: Review,
-        where: ratingWhereClause,
-        attributes: ['rating'],
-        required: false,
+        model: Product,
+        as: 'product',
+        where: whereClause,
+        include: [
+          {
+            model: Review,
+            where: ratingWhereClause,
+            required: isReviewRequired,
+          },
+        ],
+        attributes: [
+          'id',
+          'product_name',
+          'description',
+          'image_url',
+          'category_id',
+          'createdAt'
+        ],
       },
     ],
     order: sortOrder,
     limit,
     offset: (page - 1) * limit,
     distinct: true,
-    attributes: { exclude: ['square_product_id', 'updatedAt'] },
+    attributes: [
+      'id',
+      'product_id',
+      'size',
+      'color',
+      'price',
+      'stock_quantity',
+      'in_stock',
+      'image_url',
+      'createdAt'
+    ],
   });
 
-  const processedProducts = products.rows.map((product) => {
-    const data = product.toJSON();
-    if (data.variations?.length) {
-      data.variations = [data.variations[0]];
-    } else {
-      data.variations = [];
-    }
+  const processedProducts = variations.rows.map((variation) => {
+    const variationData = variation.toJSON();
+    const product = variationData.product;
 
-    if (data.Review) {
-      data.Reviews = calculateRating(data);
-    }
+    // Calculate rating for the product
+    const rating = calculateRating({
+      Reviews: product.Reviews || [],
+    });
 
-    return data;
+    return {
+      id: product.id,
+      product_name: product.product_name,
+      description: product.description,
+      image_url: product.image_url,
+      category_id: product.category_id,
+      rating,
+      variation: {
+        id: variationData.id,
+        product_id: variationData.product_id,
+        size: variationData.size,
+        color: variationData.color,
+        price: variationData.price,
+        stock_quantity: variationData.stock_quantity,
+        in_stock: variationData.in_stock,
+        image_url: variationData.image_url,
+      },
+    };
   });
 
   return ApiResponse.success(res, 'Products fetched successfully', {
     products: processedProducts,
-    totalItems: products.count,
-    totalPages: Math.ceil(products.count / limit),
+    totalItems: variations.count,
+    totalPages: Math.ceil(variations.count / limit),
     currentPage: Number(page),
   });
 });
@@ -358,78 +399,7 @@ const getProductsByCategory = asyncWrapper(async (req, res) => {
 });
 
 const searchProducts = asyncWrapper(async (req, res) => {
-  const {
-    q,
-    sort = 'createdAt',
-    order = 'DESC',
-    page = 1,
-    limit = 10,
-    minPrice,
-    maxPrice,
-    size,
-    color,
-    inStock,
-    rating,
-    brands,
-  } = req.query;
-
-  const { whereClause, variationWhereClause, ratingWhereClause } =
-    buildFilterConditions({
-      search: q,
-      minPrice,
-      maxPrice,
-      size,
-      color,
-      inStock,
-      rating,
-      brands,
-    });
-
-  const sortOrder = sort.split(',').map((field) => {
-    const [name, direction = order] = field.split(':');
-    return [name, direction.toUpperCase()];
-  });
-
-  const products = await Product.findAndCountAll({
-    where: whereClause,
-    include: [
-      {
-        model: ProductVariation,
-        as: 'variations',
-        where: Object.keys(variationWhereClause).length
-          ? variationWhereClause
-          : undefined,
-        attributes: { exclude: ['updatedAt'] },
-      },
-      {
-        model: Review,
-        where: ratingWhereClause,
-        attributes: ['rating'],
-        required: false,
-      },
-    ],
-    order: sortOrder,
-    limit,
-    offset: (page - 1) * limit,
-    distinct: true,
-    attributes: { exclude: ['square_product_id', 'updatedAt'] },
-  });
-
-  const processedProducts = products.rows.map((product) => {
-    const data = product.toJSON();
-    if (data.variations?.length) {
-      data.variations = [data.variations[0]];
-    } else {
-      data.variations = [];
-    }
-
-    if (data.Review) {
-      data.Reviews = calculateRating(data);
-    }
-    return data;
-  });
-
-  return ApiResponse.success(res, 'Search results', processedProducts);
+  return getAllProducts(req, res);
 });
 
 const getRelatedProducts = asyncWrapper(async (req, res) => {
@@ -479,7 +449,7 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
       {
         model: Review,
         attributes: ['rating'],
-        required: false
+        required: false,
       },
     ],
     order: sequelize.random(),
@@ -497,7 +467,7 @@ const getRelatedProducts = asyncWrapper(async (req, res) => {
 
     if (data.Review) {
       data.Reviews = calculateRating(data);
-    }    
+    }
     return data;
   });
 
