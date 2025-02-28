@@ -13,7 +13,7 @@ import favoriteRoutes from './routes/favrouiteRoutes.js';
 
 
 //Routes
-import addToCartRoutes from './routes/addToCartRoutes.js';
+import cartRoutes from './routes/cartRoute.js';
 import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js';
 import squareRoute from './routes/squareRoutes.js';
@@ -76,7 +76,7 @@ app.use('/api/v1/products', productRoute);
 app.use('/api/v1/categories', categoryRoute)
 
 // CART
-app.use('/api/v1/cart', addToCartRoutes);
+app.use('/api/v1/cart', cartRoutes);
 
 
 // ADDRESS auth(req.userId)
