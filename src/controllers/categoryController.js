@@ -1,7 +1,6 @@
 import { Category } from "../models/index.js";
 import ApiResponse from "../utils/APIResponse.js";
 import asyncWrapper from "../utils/asyncWrapper.js";
-import ApiError from "../utils/APIError.js";
 
 const buildCategoryTree = (categories, parentId = null) => {
     const categoryMap = {};

@@ -312,12 +312,13 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
 export const returnOrder = asyncWrapper(async (req, res) => {
   const { orderId } = req.params;
   const { reason } = req.body;
+  const userId = req.userId
 
   const transaction = await sequelize.transaction();
 
   try {
     const order = await Order.findOne({
-      where: { id: orderId },
+      where: { id: orderId, user_id: userId },
       include: [
         {
           model: OrderItem,
@@ -443,12 +444,13 @@ export const returnOrder = asyncWrapper(async (req, res) => {
 export const cancelOrder = asyncWrapper(async (req, res) => {
   const { orderId } = req.params;
   const { reason } = req.body;
+  const userId = req.userId;
 
   const transaction = await sequelize.transaction();
 
   try {
     const order = await Order.findOne({
-      where: { id: orderId },
+      where: { id: orderId, user_id: userId },
       include: [
         {
           model: OrderItem,
@@ -468,7 +470,7 @@ export const cancelOrder = asyncWrapper(async (req, res) => {
     });
 
     if (!order) {
-      throw ApiError.badRequest('Order not found');
+      throw ApiError.badRequest('Order not found for the user');
     }
 
     if(order.order_status === ORDER_STATUS.CANCELLED){
