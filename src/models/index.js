@@ -17,6 +17,7 @@ import Refund from './refundModel.js';
 import ShiprocketAuth from './shiprocketAuthModel.js';
 import ReturnShipment from './returnShipmentModel.js';
 import Favorite from './favrouiteModel.js';
+import Settings from './settingModel.js';
 
 const sycnDB = async () => {
   // OTP
@@ -136,6 +137,16 @@ const sycnDB = async () => {
   ProductVariation.hasMany(Favorite, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
   Favorite.belongsTo(ProductVariation, { foreignKey: 'product_variation_id', onDelete: 'CASCADE' });
 
+  //profile/setting
+  User.hasOne(Settings, { 
+    foreignKey: 'userId',
+    onDelete: 'CASCADE' 
+  });
+  Settings.belongsTo(User, { 
+    foreignKey: 'userId',
+    onDelete: 'CASCADE' 
+  });
+
   try {
     // await User.sync({ force: true });
     // await Product.sync({ force: true });
@@ -147,7 +158,7 @@ const sycnDB = async () => {
     // await Order.sync();
     // await Payment.sync();
 
-    await sequelize.sync();
+    await sequelize.sync({});
     // await Review.sync();
     console.log('sync completed');
   } catch (error) {
@@ -175,4 +186,5 @@ export {
   Category,
   Refund,
   Favorite,
+  Settings,
 };
