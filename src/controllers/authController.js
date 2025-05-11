@@ -9,38 +9,23 @@ import {
 import asyncWrapper from '../utils/asyncWrapper.js';
 import ApiError from '../utils/APIError.js';
 import ApiResponse from '../utils/APIResponse.js';
-import { Op } from 'sequelize';
 import sendOTP from '../utils/twilio.js';
 import { sequelize } from '../config/DBConfig.js';
 import { createCart } from './CartController.js';
 
-const createUser = asyncWrapper(async (req, res) => {
+const createUser = asyncWrapper(async (req, res, next) => {
   const transaction = await sequelize.transaction();
   try {
     const { userName, email, password, phoneNumber } = req.body;
-
+    
     if (!userName || !email || !phoneNumber || !password) {
       throw ApiError.badRequest(
         'userName, email, phoneNumber and password are required'
       );
     }
-
-    const existingUser = await User.findOne({
-      where: {
-        [Op.or]: [{ email }, { phone_number: phoneNumber }],
-      },
-      attributes: ['id'],
-      raw: true,
-    });
-
-    if (existingUser) {
-      throw ApiError.badRequest(
-        'User already exists with this email or phone number'
-      );
-    }
-
+    
     const hashedPassword = await bcrypt.hash(password, 10);
-
+    
     const user = await User.create(
       {
         userName,
@@ -50,7 +35,7 @@ const createUser = asyncWrapper(async (req, res) => {
       },
       { transaction }
     );
-
+    
     const OTP = generateOTP();
 
     const isOTPSent = await sendOTP(OTP, phoneNumber);
@@ -58,7 +43,6 @@ const createUser = asyncWrapper(async (req, res) => {
     if (!isOTPSent) {
       throw ApiError.internal('Failed to send OTP');
     }
-
     await Promise.all([
       OTPVerification.create(
         {
@@ -82,7 +66,7 @@ const createUser = asyncWrapper(async (req, res) => {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw ApiError.internal(error?.message | 'Something went wrong');
+    next(error);
   }
 });
 
@@ -135,7 +119,7 @@ const login = asyncWrapper(async (req, res) => {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw ApiError.internal(error?.message || 'something went wrong');
+    throw new Error(error?.message || 'something went wrong');
   }
 });
 
