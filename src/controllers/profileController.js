@@ -1,4 +1,4 @@
-import { User, Order, Review, Settings } from '../models/index.js';
+import { User, Order, Review, Settings, Address } from '../models/index.js';
 import ApiResponse from '../utils/APIResponse.js';
 import ApiError from '../utils/APIError.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
@@ -15,9 +15,10 @@ export const getUserProfile = asyncWrapper(async (req, res) => {
     throw ApiError.notFound('User profile not found');
   }
 
-  const [orderCount, reviewCount] = await Promise.all([
+  const [orderCount, reviewCount, addresses] = await Promise.all([
     Order.count({ where: { user_id: userId } }),
-    Review.count({ where: { user_id: userId } })
+    Review.count({ where: { user_id: userId } }),
+    Address.count({ where: { user_id: userId }})
   ]);
 
   const profileData = {
@@ -25,7 +26,8 @@ export const getUserProfile = asyncWrapper(async (req, res) => {
     email: userProfile.email,
     statistics: {
       totalOrders: orderCount,
-      totalReviews: reviewCount
+      totalReviews: reviewCount,
+      totalAddresses: addresses
     }
   };
 
