@@ -8,7 +8,7 @@ import { Op } from 'sequelize';
 import ApiError from '../utils/APIError.js';
 import ApiResponse from '../utils/APIResponse.js';
 import asyncWrapper from '../utils/asyncWrapper.js';
-import { fetchSquareCatalogList } from './squareController.js';
+// import { fetchSquareCatalogList } from './squareController.js';
 import { sequelize } from '../config/DBConfig.js';
 
 const buildFilterConditions = ({

@@ -14,7 +14,7 @@ import favoriteRoutes from './routes/favrouiteRoutes.js';
 import cartRoutes from './routes/cartRoute.js';
 import authRoute from './routes/authRoute.js';
 import addressRoute from './routes/addressRoutes.js';
-import squareRoute from './routes/squareRoutes.js';
+// import squareRoute from './routes/squareRoutes.js';
 import productRoute from './routes/productRoutes.js';
 import categoryRoute from './routes/categoryRoutes.js';
 import orderRoute from './routes/orderRoutes.js'
@@ -68,7 +68,7 @@ app.use('/api/v1/auth', authRoute);
 app.use('/api/v1', profileRoutes);
 
 // SQUARE
-app.use('/api/v1/square', squareRoute) 
+// app.use('/api/v1/square', squareRoute) 
 
 // PRODUCT
 app.use('/api/v1/products', productRoute);
@@ -105,7 +105,7 @@ app.get('/razor-ui', (req, res) => {
 
 app.use(errorHandler);
 
-const port = process.env.PORT || 3004;
+const port = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {

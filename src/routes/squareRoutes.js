@@ -1,32 +1,32 @@
-import express from "express";
-import { Router } from "express";
-import { authorizeSquare, fetchSquareCatalogList, squareCallback, updateSquareInventory } from "../controllers/squareController.js";
+// import express from "express";
+// import { Router } from "express";
+// import { authorizeSquare, fetchSquareCatalogList, squareCallback, updateSquareInventory } from "../controllers/squareController.js";
 
-const router = Router();
+// const router = Router();
 
-//Square generate access & refresh token
-router.get("/authorize", authorizeSquare)
-router.get("/callback", squareCallback)
+// //Square generate access & refresh token
+// router.get("/authorize", authorizeSquare)
+// router.get("/callback", squareCallback)
 
-//Webhook
-// router.get("/webhook/notif", (req, res) => {
-//   res.status(200).send("Webhook received get")
+// //Webhook
+// // router.get("/webhook/notif", (req, res) => {
+// //   res.status(200).send("Webhook received get")
+// // })
+// // router.post("/webhook/notif", (req, res) => {
+// //   console.log(req.body,)
+// //   res.status(200).send("Webhook received post")
+// // })
+// // router.post("/webhook", (req, res) => {
+// //   console.log(req.body)
+// //   res.send("Webhook received")
+// // })
+
+// //Interact with Square API
+// router.get("/items", fetchSquareCatalogList)
+// router.post("/inv", async (req, res) => {
+//   const { catalogId}    = req.body;
+//   const response = await updateSquareInventory(catalogId)
+//   res.json(response)
 // })
-// router.post("/webhook/notif", (req, res) => {
-//   console.log(req.body,)
-//   res.status(200).send("Webhook received post")
-// })
-// router.post("/webhook", (req, res) => {
-//   console.log(req.body)
-//   res.send("Webhook received")
-// })
 
-//Interact with Square API
-router.get("/items", fetchSquareCatalogList)
-router.post("/inv", async (req, res) => {
-  const { catalogId}    = req.body;
-  const response = await updateSquareInventory(catalogId)
-  res.json(response)
-})
-
-export default router;
+// export default router;
