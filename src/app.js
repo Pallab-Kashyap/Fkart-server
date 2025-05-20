@@ -105,7 +105,7 @@ app.get('/razor-ui', (req, res) => {
 
 app.use(errorHandler);
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3004;
 
 const startServer = async () => {
   try {
