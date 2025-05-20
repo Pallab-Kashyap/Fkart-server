@@ -39,13 +39,13 @@ app.use(
     credentials: true,
   })
 );
-app.use((req, res, next) => {
-  const apiKey = req.headers['x-api-signature'];
-  if (apiKey !== process.env.APP_API_KEY) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   const apiKey = req.headers['x-api-signature'];
+//   if (apiKey !== process.env.APP_API_KEY) {
+//     return res.status(403).json({ error: 'Forbidden' });
+//   }
+//   next();
+// });
 // const limiter = rateLimit({
 //   windowMs: 15 * 60 * 1000,
 //   max: 100,
