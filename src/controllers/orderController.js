@@ -637,10 +637,10 @@ export const getOrderAndOrderItemsDetails = async (orderId) => {
 
 export const getOrders = asyncWrapper(async (req, res) => {
   const userId  = req.userId;
-  const { status } = req.query;
+  const { status } = req.params;
 
   if(status && !Object.values(ORDER_STATUS).includes(status)){
-    return ApiError.badRequest('status is not valid')
+    throw ApiError.badRequest(`Status must be one of: "processing", "delivered", "cancelled", "returned"`)
   }
 
   const where = { user_id: userId };
@@ -707,6 +707,12 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
       {
         model: Payment,
         attributes: ['payment_method', 'payment_status', 'amount'],
+        include: [
+          {
+            model: Refund,
+            attributes: ['refund_status', 'refund_amount',]
+          }
+        ]
       },
       {
         model: Address,
@@ -715,12 +721,6 @@ export const getOrderDetails = asyncWrapper(async (req, res) => {
       {
         model: Shipment,
         attributes: ['tracking_url', 'delivery_date', 'courier_name', 'status'],
-        include: [
-          {
-            model: Refund,
-            attributes: ['refund_status', 'refund_amount',]
-          }
-        ]
       }
     ]
   });
