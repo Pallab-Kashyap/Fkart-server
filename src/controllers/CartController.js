@@ -138,11 +138,11 @@ export const addItemToCart = asyncWrapper(async (req, res) => {
   });
 
   if (!variation) {
-    throw ApiError.notFound(res, 'Product variation not found');
+    throw ApiError.notFound('Product variation not found');
   }
 
   if (variation.stock_quantity < quantity) {
-    throw ApiError.badRequest(res, 'Insufficient stock');
+    throw ApiError.badRequest('Insufficient stock');
   }
 
   const existingItem = await CartItem.findOne({
@@ -209,7 +209,7 @@ export const updateCartItem = asyncWrapper(async (req, res) => {
 
   cartItem.quantity = quantity;
 
-  await cartItem.save({ transaction: t });
+  await cartItem.save();
 
   return ApiResponse.success(res, 'CartItem updated successfully', cartItem);
 });

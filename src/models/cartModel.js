@@ -1,10 +1,6 @@
-
-  
-
 // export default Cart;
 import { DataTypes } from "sequelize";
 import { sequelize } from '../config/DBConfig.js'; 
-import CartItem from "./cartItemModel.js";
 
 const Cart = sequelize.define('Cart', {
     id: {
@@ -33,4 +29,4 @@ const Cart = sequelize.define('Cart', {
   
   
 
-export default Cart;   // 
+export default Cart;
