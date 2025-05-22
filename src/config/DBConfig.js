@@ -3,7 +3,7 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-const sequelize = new Sequelize(process.env.DB_CONNECTION_URL_RAILWAY, {
+const sequelize = new Sequelize(process.env.DB_URL_NEON, {
   dialect: 'postgres',
   dialectOptions: {
 
