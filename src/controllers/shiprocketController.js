@@ -39,14 +39,13 @@ export const createShiprocketOrder = async (orderId) => {
         {
           model: Address,
           as: 'shipping_address',
-          where: { isDeleted: false }
+          required: false
         },
         {
           model: User,
         },
       ],
     });
-
     if (!order) {
       throw APIError.badRequest('Order not found');
     }
@@ -166,6 +165,7 @@ export const createShiprocketOrder = async (orderId) => {
     return
   }
 };
+
 
 export const cancelShiprocketOrder = async ( shiprocket_order_id ) => {
  try {
