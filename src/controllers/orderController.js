@@ -640,11 +640,11 @@ export const getOrders = asyncWrapper(async (req, res) => {
   const { status } = req.params;
 
   if(status && !Object.values(ORDER_STATUS).includes(status)){
-    throw ApiError.badRequest(`Status must be one of: "processing", "delivered", "cancelled", "returned"`)
+    throw ApiError.badRequest(`Status must be one of: processing, delivered, cancelled, returned, all`)
   }
 
   const where = { user_id: userId };
-  if (status) {
+  if (status && status != "all") {
     where.order_status = status;
   }
 
