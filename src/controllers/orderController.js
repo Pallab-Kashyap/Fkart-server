@@ -18,6 +18,7 @@ import { ORDER_STATUS, PAYMENT_METHOD, PAYMENT_STATUS, REFUND_STATUS } from '../
 import ApiError from '../utils/APIError.js';
 import { createRazorpayOrder, createRazorpayRefund } from './payment/razorpayPaymentController.js';
 import { cancelShiprocketOrder, createShiprocketOrder, shiprocketReturnOrder } from './shiprocketController.js';
+import { createCart } from './CartController.js';
 
 // Helper functions-------------------->>>>>>>>>>>>
 
@@ -71,7 +72,7 @@ const createOrderItems = async (items, transaction) => {
       product_variation_id: item.product_variation_id,
       quantity: item.quantity,
       selling_price: variation.price,
-      total_Price: totalItemPrice,
+      total_price: totalItemPrice,
       sku: { size: variation.size, color: variation.color },
       order_id: null,
     });
@@ -284,8 +285,13 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
       }
     );
 
+    if(!cart){
+      await createCart()
+      throw ApiError.internal('User cart has been created please try again')
+    }
+
     if (!cart || !cart.CartItems || cart.CartItems.length === 0) {
-      throw ApiError.badRequest('Cart is empty');
+      throw ApiError.badRequest('Your cart is empty. Please add items before checking out.');
     }
 
     const { razorpayOrder, order, shiprocket } = await placeOrder(
@@ -306,6 +312,128 @@ export const cartCheckout = asyncWrapper(async (req, res) => {
     await transaction.rollback();
     console.log(error);
    throw error
+  }
+});
+
+export const buyNow = asyncWrapper(async (req, res) => {
+  const { variationId, qnt, addressId, paymentMethod } = req.body;
+  const userId = req.userId;
+
+  if (
+    !(
+      paymentMethod.toLowerCase() === PAYMENT_METHOD.COD ||
+      paymentMethod.toLowerCase() === PAYMENT_METHOD.PREPAID
+    )
+  ) {
+    throw ApiError.badRequest(
+      `payment method must be one of: ${PAYMENT_METHOD.COD} or ${PAYMENT_METHOD.PREPAID}`
+    );
+  }
+  if (!addressId) {
+    throw ApiError.badRequest('addressId is a required field');
+  }
+  if (!variationId || !qnt) {
+    throw ApiError.badRequest('variationId and qnt are required');
+  }
+
+  const transaction = await sequelize.transaction();
+  try {
+    // Fetch product variation along with product info
+    const variation = await ProductVariation.findOne({
+      where: { id: variationId },
+      include: [{ model: Product, as: 'product', attributes: ['id', 'product_name'] }],
+      transaction,
+      lock: transaction.LOCK.UPDATE,
+    });
+    if (!variation || !variation.in_stock || variation.stock_quantity < qnt) {
+      throw ApiError.badRequest(
+        variation 
+          ? `${variation.product.product_name} is out of stock or insufficient quantity available`
+          : `Product variation not found`
+      );
+    }
+
+    const totalPrice = variation.price * qnt;
+    // Create Order
+    const order = await Order.create(
+      {
+        user_id: userId,
+        total_amount: totalPrice,
+        payment_method: paymentMethod.toLowerCase(),
+        order_status: paymentMethod.toLowerCase() === PAYMENT_METHOD.COD ? ORDER_STATUS.PROCESSING : ORDER_STATUS.PENDING,
+        order_address_id: addressId,
+        total_item: qnt,
+      },
+      { transaction }
+    );
+
+    // Create OrderItem for the buy now order
+    await OrderItem.create(
+      {
+        id: crypto.randomUUID(),
+        order_id: order.id,
+        product_id: variation.product.id,
+        product_variation_id: variation.id,
+        quantity: qnt,
+        selling_price: variation.price,
+        total_price: totalPrice,
+        sku: { size: variation.size, color: variation.color },
+      },
+      { transaction }
+    );
+
+    // Decrement stock
+    await variation.decrement('stock_quantity', {
+      by: qnt,
+      transaction,
+    });
+
+    let responsePayload = null;
+    if (paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) {
+      // Create Payment record for COD
+      await Payment.create({
+        user_id: userId,
+        order_id: order.id,
+        payment_method: PAYMENT_METHOD.COD,
+        payment_status: PAYMENT_STATUS.PENDING,
+        amount: totalPrice,
+      }, { transaction });
+      // For COD, mark order as processing
+      order.order_status = ORDER_STATUS.PROCESSING;
+      await order.save({ transaction });
+    } else if (paymentMethod.toLowerCase() === PAYMENT_METHOD.PREPAID) {
+      // Create Razorpay order for prepaid purchase
+      const razorpayOrder = await createRazorpayOrder(
+        totalPrice * 100, // Amount in paise
+        'INR',
+        `receipt_${order.id.substring(0, 10)}`
+      );
+      await Payment.create({
+        id: crypto.randomUUID(),
+        user_id: userId,
+        order_id: order.id,
+        payment_method: PAYMENT_METHOD.PREPAID,
+        payment_status: PAYMENT_STATUS.PENDING,
+        payment_gateway: 'razorpay',
+        amount: totalPrice,
+        currency: 'INR',
+        razorpay_order_id: razorpayOrder.id,
+      }, { transaction });
+      responsePayload = razorpayOrder;
+    }
+
+    await transaction.commit();
+
+    // For COD, optionally trigger shiprocket order creation
+    if (paymentMethod.toLowerCase() === PAYMENT_METHOD.COD) {
+      createShiprocketOrder(order.id);
+    }
+
+    return ApiResponse.created(res, 'Buy now order created successfully', responsePayload);
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error in buyNow API:', error);
+    throw error;
   }
 });
 
