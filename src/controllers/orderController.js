@@ -341,7 +341,7 @@ export const buyNow = asyncWrapper(async (req, res) => {
     // Fetch product variation along with product info
     const variation = await ProductVariation.findOne({
       where: { id: variationId },
-      include: [{ model: Product, as: 'product', attributes: ['id', 'product_name'] }],
+      include: [{ model: Product, as: 'product', attributes: ['id', 'product_name'], required: true }],
       transaction,
       lock: transaction.LOCK.UPDATE,
     });
@@ -354,6 +354,7 @@ export const buyNow = asyncWrapper(async (req, res) => {
     }
 
     const totalPrice = variation.price * qnt;
+    console.log('TOTAL PRICE: ', totalPrice);
     // Create Order
     const order = await Order.create(
       {
@@ -376,7 +377,7 @@ export const buyNow = asyncWrapper(async (req, res) => {
         product_variation_id: variation.id,
         quantity: qnt,
         selling_price: variation.price,
-        total_price: totalPrice,
+        total_Price: totalPrice,
         sku: { size: variation.size, color: variation.color },
       },
       { transaction }
