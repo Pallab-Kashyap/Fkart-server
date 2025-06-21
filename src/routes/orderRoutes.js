@@ -6,11 +6,13 @@ import {
   returnOrder,
   createOrderFromProduct,
   getOrderDetails,
+  buyNow,
 } from '../controllers/orderController.js';
 import auth from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
+router.post('/buy-now', auth, buyNow)
 router.post('/cart-checkout', auth, cartCheckout);
 router.post('/create-from-product', auth, createOrderFromProduct);
 router.get('/:status', auth, getOrders);
